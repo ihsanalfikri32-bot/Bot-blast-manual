@@ -5,9 +5,9 @@ const firebaseConfig = {
     databaseURL: "https://web-blast-manual-default-rtdb.firebaseio.com/", 
 };
 
-// TOKEN DAN ID ADMIN ANDA
+// TOKEN DAN ID ADMIN SUDAH DIPERBARUI
 const TELEGRAM_BOT_TOKEN = "8482051630:AAEMjyVO4ufG181ztPo6ErROiYfylYu7oEA"; 
-const ADMIN_CHAT_ID = "@Licianpoo"; 
+const ADMIN_CHAT_ID = "8127804255"; 
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -87,33 +87,48 @@ function mulaiPantauSet() {
         gridSets.innerHTML = ''; 
         historyTbody.innerHTML = '';
         
-        let setTersediaCount = 0;
+        let visibleCount = 0;
         let riwayatCount = 0;
 
         if (snapshot.exists()) {
             const setsData = snapshot.val();
             const allSets = Object.keys(setsData).map(key => ({ key, ...setsData[key] }));
 
-            const availableSets = allSets.filter(set => set.status === "Tersedia").sort((a, b) => a.id - b.id);
-            setTersediaCount = availableSets.length;
+            // Tampilkan set yang "Tersedia" ATAU "Dikerjakan" (agar bisa dikunci visual)
+            const visibleSets = allSets.filter(set => set.status === "Tersedia" || set.status === "Dikerjakan").sort((a, b) => a.id - b.id);
+            visibleCount = visibleSets.length;
 
-            // Desain Grid Modern
-            availableSets.forEach(setInfo => {
+            visibleSets.forEach(setInfo => {
                 const btn = document.createElement('button');
-                btn.className = "glass-btn bg-white/5 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 group text-left";
-                btn.innerHTML = `
-                    <span class="text-xs opacity-50 uppercase tracking-wider group-hover:text-blue-300 transition">Target Ops</span>
-                    <span class="text-sm font-medium text-white">${setInfo.name}</span>
-                    <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/70 mt-1">${setInfo.count} Data</span>
-                `;
-                btn.onclick = () => takeSet(setInfo.key, setInfo.name);
+                
+                if (setInfo.status === "Tersedia") {
+                    // Tombol Normal (Bisa Diambil)
+                    btn.className = "glass-btn bg-white/5 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 group text-left transition";
+                    btn.innerHTML = `
+                        <span class="text-xs opacity-50 uppercase tracking-wider group-hover:text-blue-300 transition">Target Ops</span>
+                        <span class="text-sm font-medium text-white">${setInfo.name}</span>
+                        <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/70 mt-1">${setInfo.count} Data</span>
+                    `;
+                    btn.onclick = () => takeSet(setInfo.key, setInfo.name);
+                } else {
+                    // Tombol Terkunci (Sedang dikerjakan orang lain)
+                    btn.className = "glass-btn bg-black/40 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 text-left opacity-60 cursor-not-allowed border border-rose-500/30";
+                    btn.disabled = true; // Kunci agar tidak bisa diklik
+                    const workerShort = setInfo.worker.length > 12 ? setInfo.worker.substring(0, 12) + '...' : setInfo.worker;
+                    btn.innerHTML = `
+                        <span class="text-[10px] text-rose-400 uppercase tracking-wider font-bold">🔒 Dieksekusi</span>
+                        <span class="text-sm font-medium text-white/50 line-through">${setInfo.name}</span>
+                        <span class="text-[10px] bg-rose-500/20 text-rose-200 px-2 py-0.5 rounded mt-1">Oleh: ${workerShort}</span>
+                    `;
+                }
+                
                 gridSets.appendChild(btn);
             });
 
+            // Logika Histori Pekerja (Tetap Sama)
             const myHistorySets = allSets.filter(set => set.worker === workerName && set.status !== "Tersedia").sort((a, b) => b.id - a.id); 
             riwayatCount = myHistorySets.length;
 
-            // Desain Tabel Log Minimalis
             myHistorySets.forEach(setInfo => {
                 let badge = '';
                 if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px] uppercase tracking-wider font-medium">⏳ Otorisasi</span>';
@@ -131,7 +146,7 @@ function mulaiPantauSet() {
             });
         }
 
-        if (setTersediaCount > 0) {
+        if (visibleCount > 0) {
             gridSets.classList.remove('hidden');
             emptyState.classList.add('hidden');
         } else {
@@ -156,24 +171,26 @@ window.salinNomor = () => {
     navigator.clipboard.writeText(copyText.value).then(() => alert("✔️ Data berhasil disalin ke clipboard."));
 };
 
+// Logika Keamanan Lapis 2 (Mencegah Klik Bersamaan)
 window.takeSet = (setKey, setName) => {
     const setTargetRef = ref(db, `sets/${setKey}`);
     let retrievedNumbers = []; 
 
     runTransaction(setTargetRef, (currentData) => {
+        // Hanya berikan izin JIKA statusnya masih "Tersedia" di Database
         if (currentData && currentData.status === "Tersedia") {
             currentData.status = "Dikerjakan";
             currentData.worker = workerName;
             retrievedNumbers = currentData.numbers || []; 
             return currentData;
         }
-        return; 
+        return; // Batalkan transaksi jika gagal
     }).then(({ committed }) => {
         if (committed) {
             activeSetKey = setKey;
             activeSetName = setName;
             startTask(setName, retrievedNumbers); 
-        } else alert(`Akses Ditolak: ${setName} telah dieksekusi operator lain.`);
+        } else alert(`Akses Ditolak: ${setName} telah dieksekusi operator lain sesaat sebelum Anda.`);
     });
 };
 
@@ -206,6 +223,7 @@ window.reportIssue = (issueType) => {
     batalTask(issueType);
 }
 
+// Logika Eskalasi (Membuka Gembok Otomatis)
 function batalTask(alasan) {
     alert(`Gugus Tugas Dibatalkan\nKeterangan: ${alasan}`);
     if (activeSetKey) {
@@ -273,5 +291,5 @@ function resetTampilan() {
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('file-upload').value = "";
     document.getElementById('target-numbers-display').value = "";
-          }
-      
+            }
+                    
