@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getDatabase, ref as dbRef, onValue, runTransaction, update, set, push } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
+import { getDatabase, ref as dbRef, onValue, runTransaction, update, set, push, get } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
 
 const firebaseConfig = {
     databaseURL: "https://web-blast-manual-default-rtdb.firebaseio.com/", 
@@ -82,74 +82,92 @@ function mulaiPantauSistem() {
             const conf = snapshot.val();
             currentPricePerChat = conf.price_per_chat || 0;
             document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
-            hitungSaldo(); 
+            cekSaldoDanSet(); 
         }
     });
 
-    onValue(setsRef, (snapshot) => {
-        if (isWorking) return; 
-        
-        const gridSets = document.getElementById('grid-sets');
-        const historyTbody = document.getElementById('worker-history-list');
-        gridSets.innerHTML = ''; 
-        historyTbody.innerHTML = '';
-        
-        let visibleCount = 0;
-        let validNumberCount = 0; 
+    onValue(setsRef, () => {
+        if (!isWorking) cekSaldoDanSet();
+    });
+}
 
-        if (snapshot.exists()) {
-            const setsData = snapshot.val();
-            const allSets = Object.keys(setsData).map(key => ({ key, ...setsData[key] }));
+function cekSaldoDanSet() {
+    const safeKey = workerName.replace(/[.#$[\]]/g, '');
+    const workerProfileRef = dbRef(db, `workers/${safeKey}`);
 
-            const visibleSets = allSets.filter(set => set.status === "Tersedia" || set.status === "Dikerjakan").sort((a, b) => a.id - b.id);
-            visibleCount = visibleSets.length;
-            document.getElementById('info-tersedia').innerText = allSets.filter(set => set.status === "Tersedia").length;
-
-            visibleSets.forEach(setInfo => {
-                const btn = document.createElement('button');
-                if (setInfo.status === "Tersedia") {
-                    btn.className = "glass-btn bg-white/5 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 group text-left";
-                    btn.innerHTML = `<span class="text-[10px] opacity-50 uppercase tracking-wider">Target Ops</span><span class="text-sm font-medium text-white">${setInfo.name}</span><span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/70 mt-1">${setInfo.count} Target</span>`;
-                    btn.onclick = () => takeSet(setInfo.key, setInfo.name);
-                } else {
-                    btn.className = "glass-btn bg-black/40 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 text-left opacity-60 cursor-not-allowed";
-                    btn.disabled = true;
-                    btn.innerHTML = `<span class="text-[10px] text-rose-400 uppercase tracking-wider font-bold">🔒 Dieksekusi</span><span class="text-sm font-medium text-white/50 line-through">${setInfo.name}</span>`;
-                }
-                gridSets.appendChild(btn);
-            });
-
-            const myHistorySets = allSets.filter(set => set.worker === workerName && set.status !== "Tersedia").sort((a, b) => b.id - a.id); 
-            
-            myHistorySets.forEach(setInfo => {
-                let badge = '';
-                if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
-                else if (setInfo.status === "Valid") {
-                    badge = '<span class="text-emerald-400 text-[10px]">✔️ Selesai</span>';
-                    validNumberCount += (setInfo.count || 0); 
-                }
-                else if (setInfo.status === "Gagal") badge = '<span class="text-rose-400 text-[10px]">❌ Gagal</span>';
-                else if (setInfo.status === "Dikerjakan") badge = '<span class="text-blue-400 text-[10px]">🔄 Proses</span>';
-
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-white/5";
-                tr.innerHTML = `<td class="py-2 px-1 text-white/80">${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
-                historyTbody.appendChild(tr);
-            });
-
-            currentSaldo = validNumberCount * currentPricePerChat;
-            hitungSaldo();
+    // Ambil data waktu pencairan terakhir worker, lalu hitung ulang saldo
+    get(workerProfileRef).then((wSnapshot) => {
+        let lastWithdrawTime = 0;
+        if (wSnapshot.exists() && wSnapshot.val().last_withdraw_time) {
+            lastWithdrawTime = wSnapshot.val().last_withdraw_time;
         }
 
-        if (visibleCount > 0) { document.getElementById('empty-state').classList.add('hidden'); } 
-        else { document.getElementById('empty-state').classList.remove('hidden'); }
+        get(setsRef).then((snapshot) => {
+            const gridSets = document.getElementById('grid-sets');
+            const historyTbody = document.getElementById('worker-history-list');
+            gridSets.innerHTML = ''; 
+            historyTbody.innerHTML = '';
+            
+            let visibleCount = 0;
+            let validNumberCount = 0; 
+
+            if (snapshot.exists()) {
+                const setsData = snapshot.val();
+                const allSets = Object.keys(setsData).map(key => ({ key, ...setsData[key] }));
+
+                const visibleSets = allSets.filter(set => set.status === "Tersedia" || set.status === "Dikerjakan").sort((a, b) => a.id - b.id);
+                visibleCount = visibleSets.length;
+                document.getElementById('info-tersedia').innerText = allSets.filter(set => set.status === "Tersedia").length;
+
+                visibleSets.forEach(setInfo => {
+                    const btn = document.createElement('button');
+                    if (setInfo.status === "Tersedia") {
+                        btn.className = "glass-btn bg-white/5 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 group text-left";
+                        btn.innerHTML = `<span class="text-[10px] opacity-50 uppercase tracking-wider">Target Ops</span><span class="text-sm font-medium text-white">${setInfo.name}</span><span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/70 mt-1">${setInfo.count} Target</span>`;
+                        btn.onclick = () => takeSet(setInfo.key, setInfo.name);
+                    } else {
+                        btn.className = "glass-btn bg-black/40 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 text-left opacity-60 cursor-not-allowed";
+                        btn.disabled = true;
+                        btn.innerHTML = `<span class="text-[10px] text-rose-400 uppercase tracking-wider font-bold">🔒 Dieksekusi</span><span class="text-sm font-medium text-white/50 line-through">${setInfo.name}</span>`;
+                    }
+                    gridSets.appendChild(btn);
+                });
+
+                const myHistorySets = allSets.filter(set => set.worker === workerName && set.status !== "Tersedia").sort((a, b) => b.id - a.id); 
+                
+                myHistorySets.forEach(setInfo => {
+                    let badge = '';
+                    if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
+                    else if (setInfo.status === "Valid") {
+                        badge = '<span class="text-emerald-400 text-[10px]">✔️ Selesai</span>';
+                        // Hanya hitung ke saldo aktif JIKA diselesaikan SETELAH waktu withdraw terakhir disetujui admin
+                        if (!setInfo.completed_at || setInfo.completed_at > lastWithdrawTime) {
+                            validNumberCount += (setInfo.count || 0); 
+                        }
+                    }
+                    else if (setInfo.status === "Gagal") badge = '<span class="text-rose-400 text-[10px]">❌ Gagal</span>';
+                    else if (setInfo.status === "Dikerjakan") badge = '<span class="text-blue-400 text-[10px]">🔄 Proses</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-white/5";
+                    tr.innerHTML = `<td class="py-2 px-1 text-white/80">${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
+                    historyTbody.appendChild(tr);
+                });
+
+                currentSaldo = validNumberCount * currentPricePerChat;
+                hitungSaldo();
+            }
+
+            if (visibleCount > 0) { document.getElementById('empty-state').classList.add('hidden'); } 
+            else { document.getElementById('empty-state').classList.remove('hidden'); }
+        });
     });
 }
 
 function hitungSaldo() { document.getElementById('display-saldo').innerText = `Rp ${currentSaldo.toLocaleString('id-ID')}`; }
 
 window.ajukanPencairan = async () => {
-    if (currentSaldo <= 0) return alert("Selesaikan Gugus Tugas dan tunggu divalidasi Admin untuk mencairkan saldo.");
+    if (currentSaldo <= 0) return alert("Belum ada pendapatan baru yang bisa dicairkan.");
     if (confirm(`Cairkan Rp ${currentSaldo.toLocaleString('id-ID')} ke:\n${paymentData}?`)) {
         await set(push(withdrawRef), { worker: workerName, payment_info: paymentData, amount: currentSaldo, timestamp: Date.now(), status: "Pending" });
         const msg = `💰 **PENGAJUAN WITHDRAW** 💰\n\n👤 Pekerja: ${workerName}\n💵 Rp ${currentSaldo.toLocaleString('id-ID')}\n💳 ${paymentData}`;
@@ -211,7 +229,6 @@ function batalTask(alasan) {
     resetTampilan();
 }
 
-// MENGGUNAKAN SDK RESMI TELEGRAM UNTUK MEMBUKA CHAT ADMIN
 window.finishTask = async () => {
     clearInterval(timerInterval);
 
@@ -222,20 +239,18 @@ window.finishTask = async () => {
                           `📊 *Daftar Nomor Target:*\n${activeNumbersString}\n\n` +
                           `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
 
-    // Salin teks laporan ke clipboard
     navigator.clipboard.writeText(formatPesan).catch(() => {});
 
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
-            video: "Dikirim via Chat Pribadi Telegram" 
+            video: "Dikirim via Chat Pribadi Telegram",
+            completed_at: Date.now() // Menandai waktu penyelesaian tugas
         });
     }
 
-    // Buat tautan menuju chat Telegram Anda
     const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
 
-    // Gunakan fungsi bawaan Telegram Web App agar langsung membuka aplikasi Telegram
     if (tg && tg.openTelegramLink) {
         tg.openTelegramLink(telegramUrl);
     } else {
@@ -254,5 +269,5 @@ function resetTampilan() {
     document.getElementById('active-task-area').classList.add('hidden');
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
-            }
-                    
+}
+    
