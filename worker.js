@@ -6,8 +6,8 @@ const firebaseConfig = {
 };
 
 const TELEGRAM_BOT_TOKEN = "8482051630:AAEMjyVO4ufG181ztPo6ErROiYfylYu7oEA"; 
-// ID GRUP ANDA SUDAH DIPASANG DI SINI
-const ADMIN_CHAT_ID = "-5324239276"; 
+// Username Telegram Admin Anda (atau ID Admin) untuk tujuan pengarahan chat
+const ADMIN_TELEGRAM_USERNAME = "Licianpoo"; // Ganti dengan username Telegram Anda (tanpa @) atau biarkan jika ini benar
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -26,6 +26,7 @@ let isWorking = false;
 let timerInterval;
 let activeSetKey = null; 
 let activeSetName = null; 
+let activeNumbersString = ""; // Menyimpan teks nomor untuk disalin otomatis
 let currentPricePerChat = 0;
 let currentSaldo = 0; 
 
@@ -153,7 +154,7 @@ window.ajukanPencairan = async () => {
     if (confirm(`Cairkan Rp ${currentSaldo.toLocaleString('id-ID')} ke:\n${paymentData}?`)) {
         await set(push(withdrawRef), { worker: workerName, payment_info: paymentData, amount: currentSaldo, timestamp: Date.now(), status: "Pending" });
         const msg = `💰 **PENGAJUAN WITHDRAW** 💰\n\n👤 Pekerja: ${workerName}\n💵 Rp ${currentSaldo.toLocaleString('id-ID')}\n💳 ${paymentData}`;
-        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${ADMIN_CHAT_ID}&text=${encodeURIComponent(msg)}`);
+        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=-5324239276&text=${encodeURIComponent(msg)}`);
         alert("✔️ Pengajuan pencairan berhasil dikirim!");
     }
 };
@@ -173,6 +174,7 @@ window.takeSet = (setKey, setName) => {
             currentData.status = "Dikerjakan";
             currentData.worker = workerName;
             retrievedNumbers = currentData.numbers || []; 
+            activeNumbersString = retrievedNumbers.join('\n'); // Simpan nomor untuk format teks nanti
             return currentData;
         }
         return; 
@@ -210,43 +212,35 @@ function batalTask(alasan) {
     resetTampilan();
 }
 
+// MENGARAHKAN LANGSUNG KE TELEGRAM ADMIN DENGAN FORMAT PESAN OTOMATIS
 window.finishTask = async () => {
-    const fileInput = document.getElementById('file-upload');
-    const btnKirim = document.getElementById('btn-kirim');
-
-    if (fileInput.files.length === 0) return alert("⚠️ Anda harus memilih file video bukti!");
-    
     clearInterval(timerInterval);
-    const videoFile = fileInput.files[0];
 
-    btnKirim.innerText = "Mengirim Video ke Grup...";
-    btnKirim.disabled = true;
+    // Format teks laporan lengkap
+    const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n` +
+                          `👤 *Operator:* ${workerName}\n` +
+                          `💳 *Metode Pencairan:* ${paymentData}\n` +
+                          `🎯 *Sasaran:* ${activeSetName}\n` +
+                          `📊 *Daftar Nomor Target:*\n${activeNumbersString}\n\n` +
+                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
 
-    const formData = new FormData();
-    formData.append("chat_id", ADMIN_CHAT_ID);
-    formData.append("caption", `📡 **Laporan Operasional Selesai**\n\n👤 ID Operator: ${workerName}\n💳 Metode: ${paymentData}\n🎯 Sasaran: ${activeSetName}\n⌛ Status: Menunggu Otorisasi`);
-    formData.append("video", videoFile);
+    // Salin teks laporan ke clipboard secara otomatis agar pekerja bisa langsung Paste (Tempel)
+    navigator.clipboard.writeText(formatPesan).catch(() => {});
 
-    try {
-        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendVideo`, {
-            method: "POST",
-            body: formData
+    if (activeSetKey) {
+        // Ubah status di database menjadi Menunggu Validasi
+        await update(dbRef(db, `sets/${activeSetKey}`), { 
+            status: "Menunggu Validasi", 
+            video: "Dikirim via Chat Pribadi Telegram" 
         });
-
-        const tgResult = await response.json();
-        if (!tgResult.ok) throw new Error(tgResult.description);
-
-        if (activeSetKey) {
-            await update(dbRef(db, `sets/${activeSetKey}`), { status: "Menunggu Validasi", video: "Terkirim ke Grup Telegram" });
-            alert("✔️ Video bukti berhasil dikirim otomatis ke Grup Telegram Anda!");
-        }
-
-    } catch (error) {
-        alert("Gagal mengirim video. Pastikan bot Anda sudah dijadikan Admin di dalam grup tersebut.\nError: " + error.message);
     }
 
-    btnKirim.innerText = "Otorisasi & Selesaikan";
-    btnKirim.disabled = false;
+    alert("✔️ Data tugas dikunci!\n\nAnda akan diarahkan ke Telegram. Silakan **Tempel (Paste) teks laporan** yang sudah disalin, lalu **kirim video buktinya**.");
+
+    // Buka aplikasi Telegram langsung ke chat Admin dengan membawa teks draf
+    const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
+    window.open(telegramUrl, '_blank');
+
     resetTampilan();
 }
 
@@ -254,10 +248,10 @@ function resetTampilan() {
     isWorking = false;
     activeSetKey = null;
     activeSetName = null;
+    activeNumbersString = "";
     document.getElementById('request-area').classList.remove('hidden');
     document.getElementById('active-task-area').classList.add('hidden');
     document.getElementById('timer-display').textContent = '20:00';
-    document.getElementById('file-upload').value = "";
     document.getElementById('target-numbers-display').value = "";
         }
-                   
+    
