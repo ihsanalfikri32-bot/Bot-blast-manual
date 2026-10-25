@@ -6,8 +6,7 @@ const firebaseConfig = {
 };
 
 const TELEGRAM_BOT_TOKEN = "8482051630:AAEMjyVO4ufG181ztPo6ErROiYfylYu7oEA"; 
-// Username Telegram Admin Anda (atau ID Admin) untuk tujuan pengarahan chat
-const ADMIN_TELEGRAM_USERNAME = "Licianpoo"; // Ganti dengan username Telegram Anda (tanpa @) atau biarkan jika ini benar
+const ADMIN_TELEGRAM_USERNAME = "Licianpoo"; 
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -26,7 +25,7 @@ let isWorking = false;
 let timerInterval;
 let activeSetKey = null; 
 let activeSetName = null; 
-let activeNumbersString = ""; // Menyimpan teks nomor untuk disalin otomatis
+let activeNumbersString = ""; 
 let currentPricePerChat = 0;
 let currentSaldo = 0; 
 
@@ -174,7 +173,7 @@ window.takeSet = (setKey, setName) => {
             currentData.status = "Dikerjakan";
             currentData.worker = workerName;
             retrievedNumbers = currentData.numbers || []; 
-            activeNumbersString = retrievedNumbers.join('\n'); // Simpan nomor untuk format teks nanti
+            activeNumbersString = retrievedNumbers.join('\n'); 
             return currentData;
         }
         return; 
@@ -212,11 +211,10 @@ function batalTask(alasan) {
     resetTampilan();
 }
 
-// MENGARAHKAN LANGSUNG KE TELEGRAM ADMIN DENGAN FORMAT PESAN OTOMATIS
+// MENGGUNAKAN SDK RESMI TELEGRAM UNTUK MEMBUKA CHAT ADMIN
 window.finishTask = async () => {
     clearInterval(timerInterval);
 
-    // Format teks laporan lengkap
     const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n` +
                           `👤 *Operator:* ${workerName}\n` +
                           `💳 *Metode Pencairan:* ${paymentData}\n` +
@@ -224,22 +222,25 @@ window.finishTask = async () => {
                           `📊 *Daftar Nomor Target:*\n${activeNumbersString}\n\n` +
                           `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
 
-    // Salin teks laporan ke clipboard secara otomatis agar pekerja bisa langsung Paste (Tempel)
+    // Salin teks laporan ke clipboard
     navigator.clipboard.writeText(formatPesan).catch(() => {});
 
     if (activeSetKey) {
-        // Ubah status di database menjadi Menunggu Validasi
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
             video: "Dikirim via Chat Pribadi Telegram" 
         });
     }
 
-    alert("✔️ Data tugas dikunci!\n\nAnda akan diarahkan ke Telegram. Silakan **Tempel (Paste) teks laporan** yang sudah disalin, lalu **kirim video buktinya**.");
-
-    // Buka aplikasi Telegram langsung ke chat Admin dengan membawa teks draf
+    // Buat tautan menuju chat Telegram Anda
     const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
-    window.open(telegramUrl, '_blank');
+
+    // Gunakan fungsi bawaan Telegram Web App agar langsung membuka aplikasi Telegram
+    if (tg && tg.openTelegramLink) {
+        tg.openTelegramLink(telegramUrl);
+    } else {
+        window.location.href = telegramUrl;
+    }
 
     resetTampilan();
 }
@@ -253,5 +254,5 @@ function resetTampilan() {
     document.getElementById('active-task-area').classList.add('hidden');
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
-        }
-    
+            }
+                    
