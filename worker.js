@@ -213,7 +213,9 @@ function renderWorkspace() {
                 badge = '<span class="text-emerald-400 text-[10px]">✔️ Selesai</span>';
                 let taskTime = setInfo.completed_at || 0; 
                 if (lastWithdrawTime === 0 || taskTime > lastWithdrawTime) {
-                    validNumberCount += (setInfo.count || 0); 
+                    // MENGGUNAKAN HASIL HITUNGAN NYATA HANYA DARI NOMOR TERKIRIM
+                    let jumlahTerkirim = setInfo.completed_count !== undefined ? setInfo.completed_count : (setInfo.count || 0);
+                    validNumberCount += jumlahTerkirim; 
                 }
             }
             else if (setInfo.status === "Gagal") badge = '<span class="text-rose-400 text-[10px]">❌ Gagal</span>';
@@ -221,7 +223,7 @@ function renderWorkspace() {
 
             const tr = document.createElement('tr');
             tr.className = "border-b border-white/5";
-            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${labelKat} ${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
+            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${labelKat} ${setInfo.name} (${setInfo.completed_count !== undefined ? setInfo.completed_count : setInfo.count} Target)</td><td class="py-2 px-1 text-right">${badge}</td>`;
             historyTbody.appendChild(tr);
         });
     }
@@ -315,37 +317,75 @@ function startTask(setName, numbersArray, category) {
     }, 1000);
 }
 
-window.reportIssue = (issueType) => { clearInterval(timerInterval); batalTask(issueType); }
+window.finishTask = () => prosesPenyelesaian('Selesai');
+window.reportIssue = (issueType) => {
+    clearInterval(timerInterval);
+    prosesPenyelesaian(issueType);
+};
 
-function batalTask(alasan) {
-    alert(`Tugas Dibatalkan: ${alasan}`);
-    if (activeSetKey) update(dbRef(db, `sets/${activeSetKey}`), { status: "Tersedia", worker: "" });
-    resetTampilan();
-}
-
-window.finishTask = async () => {
+async function prosesPenyelesaian(tipeLaporan) {
     clearInterval(timerInterval);
 
-    const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n` +
-                          `👤 *Operator:* ${workerName}\n` +
-                          `💳 *Pencairan:* ${paymentData}\n` +
-                          `🎯 *Sasaran:* ${activeSetName}\n` +
-                          `📊 *Nomor Target:*\n${activeNumbersString}\n\n` +
-                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
+    const allNumbersArray = activeNumbersString.split('\n').filter(n => n.trim() !== '');
+    const totalNomor = allNumbersArray.length;
 
-    navigator.clipboard.writeText(formatPesan).catch(() => {});
+    let inputJumlah = prompt(`Dari total ${totalNomor} nomor, berapa nomor yang BERHASIL Anda kirim?`, totalNomor);
 
+    if (inputJumlah === null) return; 
+
+    let sentCount = parseInt(inputJumlah);
+    if (isNaN(sentCount) || sentCount < 0) sentCount = 0;
+    if (sentCount > totalNomor) sentCount = totalNomor;
+
+    const completedNumbers = allNumbersArray.slice(0, sentCount);
+    const remainingNumbers = allNumbersArray.slice(sentCount);
+
+    // BILA ADA SISA NOMOR, BUAT GUGUS BARU BERSTATUS 'TERSEDIA'
+    if (remainingNumbers.length > 0) {
+        const newSetId = Date.now();
+        await set(dbRef(db, `sets/Gugus_Sisa_${newSetId}`), {
+            id: newSetId,
+            name: `Gugus Tugas (Sisa ${remainingNumbers.length})`,
+            count: remainingNumbers.length,
+            numbers: remainingNumbers,
+            category: kategoriAktif,
+            status: "Tersedia",
+            worker: "",
+            video: ""
+        });
+    }
+
+    // UPDATE GUGUS SAAT INI HANYA SEBANYAK NOMOR YANG TERKIRIM
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
-            video: "Dikirim via Chat Pribadi Telegram",
+            count: sentCount,
+            completed_count: sentCount,
+            numbers: completedNumbers,
+            video: `Laporan ${tipeLaporan} (${sentCount}/${totalNomor} Terkirim)`,
             completed_at: Date.now() 
         });
     }
 
+    const formatPesan = `📡 *LAPORAN OPERASIONAL (${tipeLaporan.toUpperCase()})* 📡\n\n` +
+                          `👤 *Operator:* ${workerName}\n` +
+                          `💳 *Pencairan:* ${paymentData}\n` +
+                          `🎯 *Sasaran:* ${activeSetName}\n` +
+                          `📊 *Status:* Terkirim ${sentCount} dari ${totalNomor} nomor\n\n` +
+                          `📋 *Nomor Berhasil Terkirim:*\n${completedNumbers.join('\n')}\n\n` +
+                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
+
+    navigator.clipboard.writeText(formatPesan).catch(() => {});
+
     const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
     window.location.href = telegramUrl;
 
+    resetTampilan();
+}
+
+function batalTask(alasan) {
+    alert(`Tugas Dibatalkan: ${alasan}`);
+    if (activeSetKey) update(dbRef(db, `sets/${activeSetKey}`), { status: "Tersedia", worker: "" });
     resetTampilan();
 }
 
@@ -366,5 +406,5 @@ function resetTampilan() {
     if (timerDisplay) timerDisplay.textContent = '20:00';
     if (targetDisplay) targetDisplay.value = "";
     if (promoDisplay) promoDisplay.value = "";
-                }
-        
+    }
+    
