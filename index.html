@@ -5,23 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ruang Kerja Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Script Telegram Dihapus 100% -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="p-4 flex flex-col items-center justify-center min-h-screen">
 
+    <!-- LOGIN MURNI WEB -->
     <div id="panel-login" class="w-full max-w-md glass-panel p-8 text-center animate-fade-up">
-        <h2 class="text-2xl font-light mb-2">Otorisasi <span id="tg-name-display" class="font-semibold text-blue-400">Sistem</span></h2>
-        <p class="text-sm opacity-60 mb-8 font-light">Identitas Telegram Anda tersinkronisasi.</p>
+        <h2 class="text-2xl font-light mb-2">Otorisasi <span class="font-semibold text-blue-400">Operator</span></h2>
+        <p class="text-sm opacity-60 mb-8 font-light">Sistem berbasis web mandiri.</p>
         
-        <div id="fallback-name-container" class="hidden mb-5">
-            <input type="text" id="input-nama" class="glass-input block w-full p-4 rounded-xl text-center text-sm" placeholder="Masukkan ID Pekerja...">
+        <div class="mb-5">
+            <input type="text" id="input-nama" class="glass-input block w-full p-4 rounded-xl text-center text-sm" placeholder="Masukkan ID/Nama Anda...">
         </div>
 
         <input type="text" id="input-payment" class="glass-input block w-full p-4 rounded-xl mb-8 text-center text-sm tracking-wide" placeholder="Metode Pencairan (Cth: DANA 0812...)">
         <button onclick="simpanDataPekerja()" class="glass-btn btn-primary text-white font-medium py-3.5 px-6 rounded-xl w-full">Akses Ruang Kerja</button>
     </div>
 
+    <!-- WORKSPACE -->
     <div id="panel-workspace" class="w-full max-w-md hidden w-full animate-fade-up">
         
         <div class="glass-panel p-4 mb-4 flex justify-between items-center bg-white/5">
@@ -80,8 +82,14 @@
                     <textarea id="target-numbers-display" rows="3" class="glass-input block w-full p-3 text-xs font-mono bg-transparent outline-none border-none" readonly></textarea>
                 </div>
 
+                <!-- FORM INPUT LINK BUKTI (MURNI WEB) -->
+                <div class="mb-5">
+                    <label class="block text-[10px] uppercase tracking-widest font-medium mb-2 text-emerald-300 ml-1">🔗 Link Bukti (G-Drive/YouTube)</label>
+                    <input type="text" id="input-bukti" class="glass-input block w-full p-3 rounded-xl text-xs font-mono text-white/90" placeholder="Tempel link video bukti di sini...">
+                </div>
+
                 <div class="flex flex-col gap-2">
-                    <button onclick="finishTask()" class="glass-btn btn-success text-white font-medium py-3.5 px-4 rounded-xl shadow-lg">Otorisasi & Selesaikan</button>
+                    <button onclick="finishTask()" class="glass-btn btn-success text-white font-medium py-3.5 px-4 rounded-xl shadow-lg">Kirim Laporan & Selesaikan</button>
                     <div class="grid grid-cols-2 gap-2 mt-1">
                         <button onclick="reportIssue('Ban')" class="glass-btn btn-danger text-xs py-2.5 px-4 rounded-xl">Lapor Ban</button>
                         <button onclick="reportIssue('Limit')" class="glass-btn btn-warning text-xs py-2.5 px-4 rounded-xl">Lapor Limit</button>
@@ -107,7 +115,6 @@
             </div>
         </div>
     </div>
-    <!-- Script v4 -->
-    <script type="module" src="worker.js?v=4"></script>
+    <script type="module" src="worker.js?v=5"></script>
 </body>
 </html>
