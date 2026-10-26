@@ -30,6 +30,8 @@ let allSetsData = null;
 let kategoriAktif = '1'; 
 let textPromo1 = "";
 let textPromo2 = "";
+let nameKat1 = "Kategori 1";
+let nameKat2 = "Kategori 2";
 
 window.onload = () => {
     if (tgUser) {
@@ -109,7 +111,13 @@ function mulaiPantauSistem() {
             currentPricePerChat = conf.price_per_chat || 0;
             textPromo1 = conf.text_1 || "Belum ada teks...";
             textPromo2 = conf.text_2 || "Belum ada teks...";
+            nameKat1 = conf.name_kat1 || "Kategori 1";
+            nameKat2 = conf.name_kat2 || "Kategori 2";
+            
+            // Ubah teks di tombol HTML secara dinamis
             document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
+            document.getElementById('tab-1').innerText = nameKat1;
+            document.getElementById('tab-2').innerText = nameKat2;
         }
         if (!isWorking) renderWorkspace();
     });
@@ -163,7 +171,7 @@ function renderWorkspace() {
         const allSets = Object.keys(allSetsData).map(key => ({ key, ...allSetsData[key] }));
 
         const visibleSets = allSets.filter(set => {
-            let cat = set.category || '1'; // Default ke kategori 1
+            let cat = set.category || '1'; 
             return (set.status === "Tersedia" || set.status === "Dikerjakan") && cat === kategoriAktif;
         }).sort((a, b) => a.id - b.id);
         
@@ -188,7 +196,8 @@ function renderWorkspace() {
         
         myHistorySets.forEach(setInfo => {
             let badge = '';
-            let labelKat = (setInfo.category || '1') === '2' ? '[Kat 2]' : '[Kat 1]';
+            // Label dinamis sesuai yang diinput admin
+            let labelKat = (setInfo.category || '1') === '2' ? `[${nameKat2}]` : `[${nameKat1}]`;
 
             if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
             else if (setInfo.status === "Valid") {
@@ -329,5 +338,5 @@ function resetTampilan() {
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
     document.getElementById('promo-text-display').value = "";
-            }
-                
+        }
+        
