@@ -29,15 +29,21 @@ let nameKat2 = "Kategori 2";
 window.onload = () => {
     workerName = localStorage.getItem('wa_worker_name') || "";
     paymentData = localStorage.getItem('wa_payment_info') || "";
-    document.getElementById('input-nama').value = workerName;
-    document.getElementById('input-payment').value = paymentData;
+    
+    const inputNama = document.getElementById('input-nama');
+    const inputPayment = document.getElementById('input-payment');
+    if (inputNama) inputNama.value = workerName;
+    if (inputPayment) inputPayment.value = paymentData;
 
     if (workerName && paymentData) masukKeWorkspace();
 };
 
 window.simpanDataPekerja = () => {
-    workerName = document.getElementById('input-nama').value.trim();
-    paymentData = document.getElementById('input-payment').value.trim();
+    const inputNama = document.getElementById('input-nama');
+    const inputPayment = document.getElementById('input-payment');
+    
+    workerName = inputNama ? inputNama.value.trim() : "";
+    paymentData = inputPayment ? inputPayment.value.trim() : "";
     
     if (!workerName) return alert("Nama tidak boleh kosong.");
     if (!paymentData) return alert("Metode pencairan wajib diisi.");
@@ -60,9 +66,14 @@ window.editPembayaran = () => {
 };
 
 function masukKeWorkspace() {
-    document.getElementById('display-nama').innerText = workerName;
-    document.getElementById('panel-login').classList.add('hidden');
-    document.getElementById('panel-workspace').classList.remove('hidden');
+    const displayNama = document.getElementById('display-nama');
+    const panelLogin = document.getElementById('panel-login');
+    const panelWorkspace = document.getElementById('panel-workspace');
+    
+    if (displayNama) displayNama.innerText = workerName;
+    if (panelLogin) panelLogin.classList.add('hidden');
+    if (panelWorkspace) panelWorkspace.classList.remove('hidden');
+    
     mulaiPantauSistem();
 }
 
@@ -72,11 +83,11 @@ window.pilihKategori = (kat) => {
     const btn2 = document.getElementById('tab-2');
 
     if (kat === '1') {
-        btn1.className = "flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition";
-        btn2.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+        if (btn1) btn1.className = "flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition";
+        if (btn2) btn2.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
     } else {
-        btn2.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
-        btn1.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+        if (btn2) btn2.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
+        if (btn1) btn1.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
     }
     renderWorkspace();
 };
@@ -100,9 +111,13 @@ function mulaiPantauSistem() {
             nameKat1 = conf.name_kat1 || "Kategori 1";
             nameKat2 = conf.name_kat2 || "Kategori 2";
             
-            document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
-            document.getElementById('tab-1').innerText = nameKat1;
-            document.getElementById('tab-2').innerText = nameKat2;
+            const infoTarif = document.getElementById('info-tarif');
+            if (infoTarif) infoTarif.innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
+            
+            const tab1 = document.getElementById('tab-1');
+            const tab2 = document.getElementById('tab-2');
+            if (tab1) tab1.innerText = nameKat1;
+            if (tab2) tab2.innerText = nameKat2;
         }
         if (!isWorking) renderWorkspace();
     });
@@ -115,6 +130,8 @@ function mulaiPantauSistem() {
     onValue(withdrawRef, (snapshot) => {
         const withdrawTbody = document.getElementById('withdraw-history-list');
         const withdrawEmpty = document.getElementById('withdraw-empty');
+        if (!withdrawTbody) return;
+        
         withdrawTbody.innerHTML = '';
         let hasWithdraw = false;
 
@@ -138,14 +155,18 @@ function mulaiPantauSistem() {
                 withdrawTbody.appendChild(tr);
             });
         }
-        if (hasWithdraw) withdrawEmpty.classList.add('hidden');
-        else withdrawEmpty.classList.remove('hidden');
+        if (withdrawEmpty) {
+            if (hasWithdraw) withdrawEmpty.classList.add('hidden');
+            else withdrawEmpty.classList.remove('hidden');
+        }
     });
 }
 
 function renderWorkspace() {
     const gridSets = document.getElementById('grid-sets');
     const historyTbody = document.getElementById('worker-history-list');
+    if (!gridSets || !historyTbody) return;
+    
     gridSets.innerHTML = ''; 
     historyTbody.innerHTML = '';
     
@@ -161,7 +182,9 @@ function renderWorkspace() {
         }).sort((a, b) => a.id - b.id);
         
         visibleCount = visibleSets.length;
-        document.getElementById('info-tersedia').innerText = visibleCount;
+        
+        const infoTersedia = document.getElementById('info-tersedia');
+        if (infoTersedia) infoTersedia.innerText = visibleCount;
 
         visibleSets.forEach(setInfo => {
             const btn = document.createElement('button');
@@ -202,10 +225,14 @@ function renderWorkspace() {
     }
 
     currentSaldo = validNumberCount * currentPricePerChat;
-    document.getElementById('display-saldo').innerText = `Rp ${currentSaldo.toLocaleString('id-ID')}`;
+    const displaySaldo = document.getElementById('display-saldo');
+    if (displaySaldo) displaySaldo.innerText = `Rp ${currentSaldo.toLocaleString('id-ID')}`;
 
-    if (visibleCount > 0) { document.getElementById('empty-state').classList.add('hidden'); } 
-    else { document.getElementById('empty-state').classList.remove('hidden'); }
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) {
+        if (visibleCount > 0) emptyState.classList.add('hidden');
+        else emptyState.classList.remove('hidden');
+    }
 }
 
 window.ajukanPencairan = async () => {
@@ -218,16 +245,20 @@ window.ajukanPencairan = async () => {
 
 window.salinNomor = () => {
     const copyText = document.getElementById("target-numbers-display");
-    copyText.select();
-    navigator.clipboard.writeText(copyText.value);
-    alert("✔️ Nomor berhasil disalin.");
+    if (copyText) {
+        copyText.select();
+        navigator.clipboard.writeText(copyText.value);
+        alert("✔️ Nomor berhasil disalin.");
+    }
 };
 
 window.salinTeksPesan = () => {
     const copyText = document.getElementById("promo-text-display");
-    copyText.select();
-    navigator.clipboard.writeText(copyText.value);
-    alert("✔️ Teks promosi berhasil disalin.");
+    if (copyText) {
+        copyText.select();
+        navigator.clipboard.writeText(copyText.value);
+        alert("✔️ Teks promosi berhasil disalin.");
+    }
 };
 
 window.takeSet = (setKey, setName) => {
@@ -256,15 +287,20 @@ window.takeSet = (setKey, setName) => {
 
 function startTask(setName, numbersArray, category) {
     isWorking = true;
-    document.getElementById('request-area').classList.add('hidden');
-    document.getElementById('active-task-area').classList.remove('hidden');
-    document.getElementById('target-amount-text').innerText = setName;
-    document.getElementById('target-numbers-display').value = numbersArray.join('\n'); 
+    const reqArea = document.getElementById('request-area');
+    const actArea = document.getElementById('active-task-area');
+    const targetText = document.getElementById('target-amount-text');
+    const targetDisplay = document.getElementById('target-numbers-display');
+    const promoDisplay = document.getElementById('promo-text-display');
+
+    if (reqArea) reqArea.classList.add('hidden');
+    if (actArea) actArea.classList.remove('hidden');
+    if (targetText) targetText.innerText = setName;
+    if (targetDisplay) targetDisplay.value = numbersArray.join('\n'); 
     
-    if(category === '1') {
-        document.getElementById('promo-text-display').value = textPromo1;
-    } else {
-        document.getElementById('promo-text-display').value = textPromo2;
+    if (promoDisplay) {
+        if (category === '1') promoDisplay.value = textPromo1;
+        else promoDisplay.value = textPromo2;
     }
 
     let timer = 20 * 60; 
@@ -272,7 +308,7 @@ function startTask(setName, numbersArray, category) {
     timerInterval = setInterval(() => {
         let minutes = parseInt(timer / 60, 10);
         let seconds = parseInt(timer % 60, 10);
-        display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (display) display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         if (--timer < 0) { clearInterval(timerInterval); batalTask('Waktu Habis'); }
     }, 1000);
 }
@@ -286,7 +322,8 @@ function batalTask(alasan) {
 }
 
 window.finishTask = async () => {
-    const linkBukti = document.getElementById('input-bukti').value.trim();
+    const inputBukti = document.getElementById('input-bukti');
+    const linkBukti = inputBukti ? inputBukti.value.trim() : "";
     if (!linkBukti) return alert("⚠️ Link bukti pengerjaan wajib diisi!");
 
     clearInterval(timerInterval);
@@ -308,10 +345,19 @@ function resetTampilan() {
     activeSetKey = null;
     activeSetName = null;
     activeNumbersString = "";
-    document.getElementById('request-area').classList.remove('hidden');
-    document.getElementById('active-task-area').classList.add('hidden');
-    document.getElementById('timer-display').textContent = '20:00';
-    document.getElementById('target-numbers-display').value = "";
-    document.getElementById('promo-text-display').value = "";
-    document.getElementById('input-bukti').value = "";
-}
+    
+    const reqArea = document.getElementById('request-area');
+    const actArea = document.getElementById('active-task-area');
+    const timerDisplay = document.getElementById('timer-display');
+    const targetDisplay = document.getElementById('target-numbers-display');
+    const promoDisplay = document.getElementById('promo-text-display');
+    const inputBukti = document.getElementById('input-bukti');
+
+    if (reqArea) reqArea.classList.remove('hidden');
+    if (actArea) actArea.classList.add('hidden');
+    if (timerDisplay) timerDisplay.textContent = '20:00';
+    if (targetDisplay) targetDisplay.value = "";
+    if (promoDisplay) promoDisplay.value = "";
+    if (inputBukti) inputBukti.value = "";
+    }
+        
