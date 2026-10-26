@@ -27,9 +27,9 @@ let currentSaldo = 0;
 let lastWithdrawTime = 0;
 let allSetsData = null;
 
-let kategoriAktif = 'produk_a'; 
-let textPromoA = "";
-let textPromoB = "";
+let kategoriAktif = '1'; 
+let textPromo1 = "";
+let textPromo2 = "";
 
 window.onload = () => {
     if (tgUser) {
@@ -80,15 +80,15 @@ function masukKeWorkspace() {
 
 window.pilihKategori = (kat) => {
     kategoriAktif = kat;
-    const btnA = document.getElementById('tab-produka');
-    const btnB = document.getElementById('tab-produkb');
+    const btn1 = document.getElementById('tab-1');
+    const btn2 = document.getElementById('tab-2');
 
-    if (kat === 'produk_a') {
-        btnA.className = "flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition";
-        btnB.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+    if (kat === '1') {
+        btn1.className = "flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition";
+        btn2.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
     } else {
-        btnB.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
-        btnA.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+        btn2.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
+        btn1.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
     }
     renderWorkspace();
 };
@@ -107,8 +107,8 @@ function mulaiPantauSistem() {
         if (snapshot.exists()) {
             const conf = snapshot.val();
             currentPricePerChat = conf.price_per_chat || 0;
-            textPromoA = conf.text_produka || "Belum ada teks...";
-            textPromoB = conf.text_produkb || "Belum ada teks...";
+            textPromo1 = conf.text_1 || "Belum ada teks...";
+            textPromo2 = conf.text_2 || "Belum ada teks...";
             document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
         }
         if (!isWorking) renderWorkspace();
@@ -163,7 +163,7 @@ function renderWorkspace() {
         const allSets = Object.keys(allSetsData).map(key => ({ key, ...allSetsData[key] }));
 
         const visibleSets = allSets.filter(set => {
-            let cat = set.category || 'produk_a';
+            let cat = set.category || '1'; // Default ke kategori 1
             return (set.status === "Tersedia" || set.status === "Dikerjakan") && cat === kategoriAktif;
         }).sort((a, b) => a.id - b.id);
         
@@ -188,7 +188,7 @@ function renderWorkspace() {
         
         myHistorySets.forEach(setInfo => {
             let badge = '';
-            let iconKat = (setInfo.category || 'produk_a') === 'produk_b' ? '🏷️' : '📦';
+            let labelKat = (setInfo.category || '1') === '2' ? '[Kat 2]' : '[Kat 1]';
 
             if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
             else if (setInfo.status === "Valid") {
@@ -203,7 +203,7 @@ function renderWorkspace() {
 
             const tr = document.createElement('tr');
             tr.className = "border-b border-white/5";
-            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${iconKat} ${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
+            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${labelKat} ${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
             historyTbody.appendChild(tr);
         });
     }
@@ -242,7 +242,7 @@ window.salinTeksPesan = () => {
 window.takeSet = (setKey, setName) => {
     const setTargetRef = dbRef(db, `sets/${setKey}`);
     let retrievedNumbers = []; 
-    let retrievedCategory = 'produk_a';
+    let retrievedCategory = '1';
 
     runTransaction(setTargetRef, (currentData) => {
         if (currentData && currentData.status === "Tersedia") {
@@ -250,7 +250,7 @@ window.takeSet = (setKey, setName) => {
             currentData.worker = workerName;
             retrievedNumbers = currentData.numbers || []; 
             activeNumbersString = retrievedNumbers.join('\n'); 
-            retrievedCategory = currentData.category || 'produk_a';
+            retrievedCategory = currentData.category || '1';
             return currentData;
         }
         return; 
@@ -270,12 +270,10 @@ function startTask(setName, numbersArray, category) {
     document.getElementById('target-amount-text').innerText = setName;
     document.getElementById('target-numbers-display').value = numbersArray.join('\n'); 
     
-    if(category === 'produk_a') {
-        document.getElementById('active-kategori-icon').innerText = '📦';
-        document.getElementById('promo-text-display').value = textPromoA;
+    if(category === '1') {
+        document.getElementById('promo-text-display').value = textPromo1;
     } else {
-        document.getElementById('active-kategori-icon').innerText = '🏷️';
-        document.getElementById('promo-text-display').value = textPromoB;
+        document.getElementById('promo-text-display').value = textPromo2;
     }
 
     let timer = 20 * 60; 
@@ -332,3 +330,4 @@ function resetTampilan() {
     document.getElementById('target-numbers-display').value = "";
     document.getElementById('promo-text-display').value = "";
             }
+                
