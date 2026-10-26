@@ -31,6 +31,11 @@ let currentSaldo = 0;
 let lastWithdrawTime = 0;
 let allSetsData = null;
 
+// VARIABEL KATEGORI
+let kategoriAktif = 'makanan'; // Default saat buka
+let textPromoMakanan = "";
+let textPromoJasa = "";
+
 window.onload = () => {
     if (tgUser) {
         workerName = tgUser.username ? `@${tgUser.username}` : tgUser.first_name;
@@ -78,6 +83,23 @@ function masukKeWorkspace() {
     mulaiPantauSistem();
 }
 
+// MENGUBAH KATEGORI YANG TAMPIL DI LAYAR
+window.pilihKategori = (kat) => {
+    kategoriAktif = kat;
+    
+    const btnMakanan = document.getElementById('tab-makanan');
+    const btnJasa = document.getElementById('tab-jasa');
+
+    if (kat === 'makanan') {
+        btnMakanan.className = "flex-1 py-3 glass-btn bg-orange-500/20 text-orange-300 rounded-xl text-xs font-bold border border-orange-500/30 transition";
+        btnJasa.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+    } else {
+        btnJasa.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
+        btnMakanan.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+    }
+    renderWorkspace();
+};
+
 function mulaiPantauSistem() {
     const safeKey = workerName.replace(/[.#$[\]]/g, '');
 
@@ -90,7 +112,10 @@ function mulaiPantauSistem() {
 
     onValue(configRef, (snapshot) => {
         if (snapshot.exists()) {
-            currentPricePerChat = snapshot.val().price_per_chat || 0;
+            const conf = snapshot.val();
+            currentPricePerChat = conf.price_per_chat || 0;
+            textPromoMakanan = conf.text_makanan || "Belum ada teks...";
+            textPromoJasa = conf.text_jasa || "Belum ada teks...";
             document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
         }
         if (!isWorking) renderWorkspace();
@@ -101,7 +126,6 @@ function mulaiPantauSistem() {
         if (!isWorking) renderWorkspace();
     });
 
-    // PEMANTAUAN RIWAYAT WITHDRAW (BARU)
     onValue(withdrawRef, (snapshot) => {
         const withdrawTbody = document.getElementById('withdraw-history-list');
         const withdrawEmpty = document.getElementById('withdraw-empty');
@@ -112,8 +136,8 @@ function mulaiPantauSistem() {
             const wData = snapshot.val();
             const myWithdrawals = Object.keys(wData)
                 .map(key => ({ key, ...wData[key] }))
-                .filter(w => w.worker === workerName) // Filter hanya milik pekerja ini
-                .sort((a, b) => b.timestamp - a.timestamp); // Urutkan terbaru di atas
+                .filter(w => w.worker === workerName)
+                .sort((a, b) => b.timestamp - a.timestamp);
 
             if (myWithdrawals.length > 0) hasWithdraw = true;
 
@@ -132,7 +156,6 @@ function mulaiPantauSistem() {
                 withdrawTbody.appendChild(tr);
             });
         }
-
         if (hasWithdraw) withdrawEmpty.classList.add('hidden');
         else withdrawEmpty.classList.remove('hidden');
     });
@@ -150,9 +173,14 @@ function renderWorkspace() {
     if (allSetsData) {
         const allSets = Object.keys(allSetsData).map(key => ({ key, ...allSetsData[key] }));
 
-        const visibleSets = allSets.filter(set => set.status === "Tersedia" || set.status === "Dikerjakan").sort((a, b) => a.id - b.id);
+        // HANYA TAMPILKAN SET SESUAI TAB KATEGORI YANG AKTIF (ATAU SET LAMA YANG TIDAK ADA KATEGORI -> MASUK MAKANAN)
+        const visibleSets = allSets.filter(set => {
+            let cat = set.category || 'makanan';
+            return (set.status === "Tersedia" || set.status === "Dikerjakan") && cat === kategoriAktif;
+        }).sort((a, b) => a.id - b.id);
+        
         visibleCount = visibleSets.length;
-        document.getElementById('info-tersedia').innerText = allSets.filter(set => set.status === "Tersedia").length;
+        document.getElementById('info-tersedia').innerText = visibleCount;
 
         visibleSets.forEach(setInfo => {
             const btn = document.createElement('button');
@@ -172,10 +200,11 @@ function renderWorkspace() {
         
         myHistorySets.forEach(setInfo => {
             let badge = '';
+            let iconKat = (setInfo.category || 'makanan') === 'jasa' ? '💼' : '🍔';
+
             if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
             else if (setInfo.status === "Valid") {
                 badge = '<span class="text-emerald-400 text-[10px]">✔️ Selesai</span>';
-                
                 let taskTime = setInfo.completed_at || 0; 
                 if (lastWithdrawTime === 0 || taskTime > lastWithdrawTime) {
                     validNumberCount += (setInfo.count || 0); 
@@ -186,7 +215,7 @@ function renderWorkspace() {
 
             const tr = document.createElement('tr');
             tr.className = "border-b border-white/5";
-            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
+            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${iconKat} ${setInfo.name}</td><td class="py-2 px-1 text-right">${badge}</td>`;
             historyTbody.appendChild(tr);
         });
     }
@@ -215,15 +244,25 @@ window.salinNomor = () => {
     alert("✔️ Nomor berhasil disalin.");
 };
 
+window.salinTeksPesan = () => {
+    const copyText = document.getElementById("promo-text-display");
+    copyText.select();
+    navigator.clipboard.writeText(copyText.value);
+    alert("✔️ Teks promosi berhasil disalin.");
+};
+
 window.takeSet = (setKey, setName) => {
     const setTargetRef = dbRef(db, `sets/${setKey}`);
     let retrievedNumbers = []; 
+    let retrievedCategory = 'makanan';
+
     runTransaction(setTargetRef, (currentData) => {
         if (currentData && currentData.status === "Tersedia") {
             currentData.status = "Dikerjakan";
             currentData.worker = workerName;
             retrievedNumbers = currentData.numbers || []; 
             activeNumbersString = retrievedNumbers.join('\n'); 
+            retrievedCategory = currentData.category || 'makanan';
             return currentData;
         }
         return; 
@@ -231,18 +270,27 @@ window.takeSet = (setKey, setName) => {
         if (committed) {
             activeSetKey = setKey;
             activeSetName = setName;
-            startTask(setName, retrievedNumbers); 
+            startTask(setName, retrievedNumbers, retrievedCategory); 
         } else alert(`Akses Ditolak: ${setName} telah diambil orang lain.`);
     });
 };
 
-function startTask(setName, numbersArray) {
+function startTask(setName, numbersArray, category) {
     isWorking = true;
     document.getElementById('request-area').classList.add('hidden');
     document.getElementById('active-task-area').classList.remove('hidden');
     document.getElementById('target-amount-text').innerText = setName;
     document.getElementById('target-numbers-display').value = numbersArray.join('\n'); 
     
+    // Tampilkan ikon dan teks promosi yang sesuai
+    if(category === 'makanan') {
+        document.getElementById('active-kategori-icon').innerText = '🍔';
+        document.getElementById('promo-text-display').value = textPromoMakanan;
+    } else {
+        document.getElementById('active-kategori-icon').innerText = '💼';
+        document.getElementById('promo-text-display').value = textPromoJasa;
+    }
+
     let timer = 20 * 60; 
     const display = document.getElementById('timer-display');
     timerInterval = setInterval(() => {
@@ -266,9 +314,9 @@ window.finishTask = async () => {
 
     const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n` +
                           `👤 *Operator:* ${workerName}\n` +
-                          `💳 *Metode Pencairan:* ${paymentData}\n` +
+                          `💳 *Pencairan:* ${paymentData}\n` +
                           `🎯 *Sasaran:* ${activeSetName}\n` +
-                          `📊 *Daftar Nomor Target:*\n${activeNumbersString}\n\n` +
+                          `📊 *Nomor Target:*\n${activeNumbersString}\n\n` +
                           `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
 
     navigator.clipboard.writeText(formatPesan).catch(() => {});
@@ -301,5 +349,5 @@ function resetTampilan() {
     document.getElementById('active-task-area').classList.add('hidden');
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
-            }
-                
+    document.getElementById('promo-text-display').value = "";
+                    }
