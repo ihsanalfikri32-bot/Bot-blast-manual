@@ -40,29 +40,24 @@
             <button onclick="ajukanPencairan()" class="glass-btn btn-success text-[10px] uppercase tracking-widest font-bold px-4 py-2.5 rounded-xl shadow-lg">Cairkan</button>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mb-5">
-            <div class="glass-panel p-4 text-center bg-blue-500/5">
-                <p class="text-[9px] uppercase tracking-widest opacity-60 mb-1">Tarif Target</p>
-                <p id="info-tarif" class="text-lg font-medium text-blue-300">Rp 0</p>
-            </div>
-            <div class="glass-panel p-4 text-center bg-purple-500/5">
-                <p class="text-[9px] uppercase tracking-widest opacity-60 mb-1">Tersedia</p>
-                <p id="info-tersedia" class="text-lg font-medium text-purple-300">0</p>
-            </div>
-        </div>
-
         <div class="glass-panel p-5 mb-5 relative overflow-hidden">
             <div id="request-area">
-                <h3 class="text-sm font-medium mb-4 text-white/80">Bursa Gugus Tugas</h3>
+                <h3 class="text-sm font-medium mb-3 text-white/80">Pilih Kategori Database</h3>
+                <!-- FILTER KATEGORI -->
+                <div class="flex gap-2 mb-5">
+                    <button id="tab-makanan" onclick="pilihKategori('makanan')" class="flex-1 py-3 glass-btn bg-orange-500/20 text-orange-300 rounded-xl text-xs font-bold border border-orange-500/30 transition">🍔 Makanan</button>
+                    <button id="tab-jasa" onclick="pilihKategori('jasa')" class="flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition">💼 Jasa</button>
+                </div>
+
                 <div id="grid-sets" class="grid grid-cols-2 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar"></div>
                 <div id="empty-state" class="hidden text-center py-10">
-                    <p class="opacity-50 text-xs font-light">Tidak ada tugas tersedia.</p>
+                    <p class="opacity-50 text-xs font-light">Kategori ini kosong / habis.</p>
                 </div>
             </div>
 
             <div id="active-task-area" class="hidden animate-fade-up">
                 <div class="text-center mb-5">
-                    <p class="text-[10px] uppercase tracking-widest opacity-50 mb-1">Mengeksekusi</p>
+                    <p id="active-kategori-icon" class="text-2xl mb-1">🍔</p>
                     <p id="target-amount-text" class="text-lg font-semibold text-blue-300">Gugus Tugas</p>
                 </div>
                 
@@ -71,16 +66,26 @@
                     <span id="timer-display" class="font-mono text-4xl font-light text-white">20:00</span>
                 </div>
 
+                <!-- TEKS PROMOSI (BARU) -->
+                <div class="mb-3 bg-black/20 p-1 rounded-xl border border-blue-500/20">
+                    <div class="flex justify-between items-center p-2 px-3">
+                        <label class="text-[10px] uppercase font-bold text-blue-200">Teks Pesan Promosi</label>
+                        <button onclick="salinTeksPesan()" class="text-[10px] bg-blue-500/20 text-blue-200 px-3 py-1.5 rounded-md">Salin Teks</button>
+                    </div>
+                    <textarea id="promo-text-display" rows="3" class="glass-input block w-full p-3 text-[10px] bg-transparent outline-none border-none text-white/80" readonly></textarea>
+                </div>
+
+                <!-- NOMOR TARGET -->
                 <div class="mb-5 bg-black/20 p-1 rounded-xl">
                     <div class="flex justify-between items-center p-2 px-3">
-                        <label class="text-xs opacity-70">Data Target</label>
-                        <button onclick="salinNomor()" class="text-[10px] bg-white/10 px-3 py-1.5 rounded-md">Salin Daftar</button>
+                        <label class="text-[10px] uppercase font-bold opacity-70">Data Nomor Target</label>
+                        <button onclick="salinNomor()" class="text-[10px] bg-white/10 px-3 py-1.5 rounded-md">Salin Nomor</button>
                     </div>
-                    <textarea id="target-numbers-display" rows="4" class="glass-input block w-full p-3 text-xs font-mono bg-transparent outline-none border-none" readonly></textarea>
+                    <textarea id="target-numbers-display" rows="3" class="glass-input block w-full p-3 text-xs font-mono bg-transparent outline-none border-none" readonly></textarea>
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <button id="btn-kirim" onclick="finishTask()" class="glass-btn btn-success text-white font-medium py-3.5 px-4 rounded-xl shadow-lg">Otorisasi & Selesaikan</button>
+                    <button onclick="finishTask()" class="glass-btn btn-success text-white font-medium py-3.5 px-4 rounded-xl shadow-lg">Otorisasi & Selesaikan</button>
                     <div class="grid grid-cols-2 gap-2 mt-1">
                         <button onclick="reportIssue('Ban')" class="glass-btn btn-danger text-xs py-2.5 px-4 rounded-xl">Lapor Ban</button>
                         <button onclick="reportIssue('Limit')" class="glass-btn btn-warning text-xs py-2.5 px-4 rounded-xl">Lapor Limit</button>
@@ -96,19 +101,15 @@
             </div>
         </div>
 
-        <!-- PANEL BARU: RIWAYAT PENCAIRAN -->
         <div class="glass-panel p-5 mb-5 border border-emerald-500/10">
             <h3 class="text-xs uppercase opacity-50 mb-4 text-emerald-200">Riwayat Pencairan Anda</h3>
             <div class="overflow-y-auto max-h-40 custom-scrollbar pr-2">
-                <table class="w-full text-left text-xs">
-                    <tbody id="withdraw-history-list"></tbody>
-                </table>
+                <table class="w-full text-left text-xs"><tbody id="withdraw-history-list"></tbody></table>
                 <div id="withdraw-empty" class="text-center py-4 hidden">
                     <p class="opacity-40 text-xs font-light">Belum ada riwayat penarikan dana.</p>
                 </div>
             </div>
         </div>
-
     </div>
     <script type="module" src="worker.js"></script>
 </body>
