@@ -2,18 +2,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebas
 import { getDatabase, ref as dbRef, onValue, runTransaction, update, set, push } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
 
 const firebaseConfig = { databaseURL: "https://web-blast-manual-default-rtdb.firebaseio.com/" };
-const TELEGRAM_BOT_TOKEN = "8482051630:AAEMjyVO4ufG181ztPo6ErROiYfylYu7oEA"; 
-const ADMIN_TELEGRAM_USERNAME = "Licianpoo"; 
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const setsRef = dbRef(db, 'sets');
 const configRef = dbRef(db, 'config');
 const withdrawRef = dbRef(db, 'withdrawals');
-
-const tg = window.Telegram.WebApp;
-tg.expand();
-const tgUser = tg.initDataUnsafe?.user; 
 
 let workerName = "";
 let paymentData = "";
@@ -34,34 +27,27 @@ let nameKat1 = "Kategori 1";
 let nameKat2 = "Kategori 2";
 
 window.onload = () => {
-    if (tgUser) {
-        workerName = tgUser.username ? `@${tgUser.username}` : tgUser.first_name;
-        document.getElementById('tg-name-display').innerText = workerName;
-    } else {
-        document.getElementById('fallback-name-container').classList.remove('hidden');
-        document.getElementById('tg-name-display').innerText = "Tamu";
-        workerName = localStorage.getItem('wa_worker_name') || "";
-        document.getElementById('input-nama').value = workerName;
-    }
+    workerName = localStorage.getItem('wa_worker_name') || "";
     paymentData = localStorage.getItem('wa_payment_info') || "";
+    document.getElementById('input-nama').value = workerName;
     document.getElementById('input-payment').value = paymentData;
 
     if (workerName && paymentData) masukKeWorkspace();
 };
 
 window.simpanDataPekerja = () => {
-    if (!tgUser) {
-        workerName = document.getElementById('input-nama').value.trim();
-        if (!workerName) return alert("Nama tidak boleh kosong.");
-        localStorage.setItem('wa_worker_name', workerName);
-    }
+    workerName = document.getElementById('input-nama').value.trim();
     paymentData = document.getElementById('input-payment').value.trim();
+    
+    if (!workerName) return alert("Nama tidak boleh kosong.");
     if (!paymentData) return alert("Metode pencairan wajib diisi.");
+    
+    localStorage.setItem('wa_worker_name', workerName);
     localStorage.setItem('wa_payment_info', paymentData);
 
     const safeKey = workerName.replace(/[.#$[\]]/g, ''); 
     set(dbRef(db, `workers/${safeKey}`), {
-        nama_telegram: workerName,
+        nama: workerName,
         data_pembayaran: paymentData,
         login_terakhir: Date.now()
     });
@@ -114,7 +100,6 @@ function mulaiPantauSistem() {
             nameKat1 = conf.name_kat1 || "Kategori 1";
             nameKat2 = conf.name_kat2 || "Kategori 2";
             
-            // Ubah teks di tombol HTML secara dinamis
             document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
             document.getElementById('tab-1').innerText = nameKat1;
             document.getElementById('tab-2').innerText = nameKat2;
@@ -196,7 +181,6 @@ function renderWorkspace() {
         
         myHistorySets.forEach(setInfo => {
             let badge = '';
-            // Label dinamis sesuai yang diinput admin
             let labelKat = (setInfo.category || '1') === '2' ? `[${nameKat2}]` : `[${nameKat1}]`;
 
             if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
@@ -227,10 +211,9 @@ function renderWorkspace() {
 window.ajukanPencairan = async () => {
     if (currentSaldo <= 0) return alert("Belum ada pendapatan baru yang divalidasi.");
     if (confirm(`Cairkan Rp ${currentSaldo.toLocaleString('id-ID')} ke:\n${paymentData}?`)) {
+        // Murni input database, tidak ada fetch ke Telegram API
         await set(push(withdrawRef), { worker: workerName, payment_info: paymentData, amount: currentSaldo, timestamp: Date.now(), status: "Pending" });
-        const msg = `💰 **PENGAJUAN WITHDRAW** 💰\n\n👤 Pekerja: ${workerName}\n💵 Rp ${currentSaldo.toLocaleString('id-ID')}\n💳 ${paymentData}`;
-        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=-5324239276&text=${encodeURIComponent(msg)}`);
-        alert("✔️ Pengajuan pencairan berhasil dikirim!");
+        alert("✔️ Pengajuan pencairan berhasil dikirim ke Admin!");
     }
 };
 
@@ -304,27 +287,21 @@ function batalTask(alasan) {
 }
 
 window.finishTask = async () => {
+    // Membaca link bukti yang diinput
+    const linkBukti = document.getElementById('input-bukti').value.trim();
+    if (!linkBukti) return alert("⚠️ Link bukti pengerjaan wajib diisi!");
+
     clearInterval(timerInterval);
-
-    const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n👤 *Operator:* ${workerName}\n💳 *Pencairan:* ${paymentData}\n🎯 *Sasaran:* ${activeSetName}\n📊 *Nomor Target:*\n${activeNumbersString}\n\n_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
-
-    navigator.clipboard.writeText(formatPesan).catch(() => {});
 
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
-            video: "Dikirim via Chat Pribadi Telegram",
+            video: linkBukti, // Menyimpan link langsung ke Firebase
             completed_at: Date.now() 
         });
+        alert("✔️ Laporan dan Link Bukti berhasil dikirim ke Admin!");
     }
-
-    const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
-
-    if (tg && tg.openTelegramLink) {
-        tg.openTelegramLink(telegramUrl);
-    } else {
-        window.location.href = telegramUrl;
-    }
+    
     resetTampilan();
 }
 
@@ -338,5 +315,6 @@ function resetTampilan() {
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
     document.getElementById('promo-text-display').value = "";
+    document.getElementById('input-bukti').value = ""; // Mengosongkan kolom bukti
         }
-        
+    
