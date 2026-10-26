@@ -2,6 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebas
 import { getDatabase, ref as dbRef, onValue, runTransaction, update, set, push } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
 
 const firebaseConfig = { databaseURL: "https://web-blast-manual-default-rtdb.firebaseio.com/" };
+const ADMIN_TELEGRAM_USERNAME = "Licianpoo";
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const setsRef = dbRef(db, 'sets');
@@ -322,21 +324,28 @@ function batalTask(alasan) {
 }
 
 window.finishTask = async () => {
-    const inputBukti = document.getElementById('input-bukti');
-    const linkBukti = inputBukti ? inputBukti.value.trim() : "";
-    if (!linkBukti) return alert("⚠️ Link bukti pengerjaan wajib diisi!");
-
     clearInterval(timerInterval);
+
+    const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n` +
+                          `👤 *Operator:* ${workerName}\n` +
+                          `💳 *Pencairan:* ${paymentData}\n` +
+                          `🎯 *Sasaran:* ${activeSetName}\n` +
+                          `📊 *Nomor Target:*\n${activeNumbersString}\n\n` +
+                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
+
+    navigator.clipboard.writeText(formatPesan).catch(() => {});
 
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
-            video: linkBukti,
+            video: "Dikirim via Chat Pribadi Telegram",
             completed_at: Date.now() 
         });
-        alert("✔️ Laporan dan Link Bukti berhasil dikirim ke Admin!");
     }
-    
+
+    const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
+    window.location.href = telegramUrl;
+
     resetTampilan();
 }
 
@@ -351,13 +360,11 @@ function resetTampilan() {
     const timerDisplay = document.getElementById('timer-display');
     const targetDisplay = document.getElementById('target-numbers-display');
     const promoDisplay = document.getElementById('promo-text-display');
-    const inputBukti = document.getElementById('input-bukti');
 
     if (reqArea) reqArea.classList.remove('hidden');
     if (actArea) actArea.classList.add('hidden');
     if (timerDisplay) timerDisplay.textContent = '20:00';
     if (targetDisplay) targetDisplay.value = "";
     if (promoDisplay) promoDisplay.value = "";
-    if (inputBukti) inputBukti.value = "";
-    }
+                }
         
