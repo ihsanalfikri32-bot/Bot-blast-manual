@@ -211,7 +211,6 @@ function renderWorkspace() {
 window.ajukanPencairan = async () => {
     if (currentSaldo <= 0) return alert("Belum ada pendapatan baru yang divalidasi.");
     if (confirm(`Cairkan Rp ${currentSaldo.toLocaleString('id-ID')} ke:\n${paymentData}?`)) {
-        // Murni input database, tidak ada fetch ke Telegram API
         await set(push(withdrawRef), { worker: workerName, payment_info: paymentData, amount: currentSaldo, timestamp: Date.now(), status: "Pending" });
         alert("✔️ Pengajuan pencairan berhasil dikirim ke Admin!");
     }
@@ -287,7 +286,6 @@ function batalTask(alasan) {
 }
 
 window.finishTask = async () => {
-    // Membaca link bukti yang diinput
     const linkBukti = document.getElementById('input-bukti').value.trim();
     if (!linkBukti) return alert("⚠️ Link bukti pengerjaan wajib diisi!");
 
@@ -296,7 +294,7 @@ window.finishTask = async () => {
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
-            video: linkBukti, // Menyimpan link langsung ke Firebase
+            video: linkBukti,
             completed_at: Date.now() 
         });
         alert("✔️ Laporan dan Link Bukti berhasil dikirim ke Admin!");
@@ -315,6 +313,5 @@ function resetTampilan() {
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
     document.getElementById('promo-text-display').value = "";
-    document.getElementById('input-bukti').value = ""; // Mengosongkan kolom bukti
-        }
-    
+    document.getElementById('input-bukti').value = "";
+}
