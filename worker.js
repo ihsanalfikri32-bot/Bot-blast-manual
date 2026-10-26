@@ -1,16 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
 import { getDatabase, ref as dbRef, onValue, runTransaction, update, set, push } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
 
-const firebaseConfig = {
-    databaseURL: "https://web-blast-manual-default-rtdb.firebaseio.com/", 
-};
-
+const firebaseConfig = { databaseURL: "https://web-blast-manual-default-rtdb.firebaseio.com/" };
 const TELEGRAM_BOT_TOKEN = "8482051630:AAEMjyVO4ufG181ztPo6ErROiYfylYu7oEA"; 
 const ADMIN_TELEGRAM_USERNAME = "Licianpoo"; 
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const setsRef = dbRef(db, 'sets');
 const configRef = dbRef(db, 'config');
 const withdrawRef = dbRef(db, 'withdrawals');
@@ -31,10 +27,9 @@ let currentSaldo = 0;
 let lastWithdrawTime = 0;
 let allSetsData = null;
 
-// VARIABEL KATEGORI
-let kategoriAktif = 'makanan'; // Default saat buka
-let textPromoMakanan = "";
-let textPromoJasa = "";
+let kategoriAktif = 'produk_a'; 
+let textPromoA = "";
+let textPromoB = "";
 
 window.onload = () => {
     if (tgUser) {
@@ -83,19 +78,17 @@ function masukKeWorkspace() {
     mulaiPantauSistem();
 }
 
-// MENGUBAH KATEGORI YANG TAMPIL DI LAYAR
 window.pilihKategori = (kat) => {
     kategoriAktif = kat;
-    
-    const btnMakanan = document.getElementById('tab-makanan');
-    const btnJasa = document.getElementById('tab-jasa');
+    const btnA = document.getElementById('tab-produka');
+    const btnB = document.getElementById('tab-produkb');
 
-    if (kat === 'makanan') {
-        btnMakanan.className = "flex-1 py-3 glass-btn bg-orange-500/20 text-orange-300 rounded-xl text-xs font-bold border border-orange-500/30 transition";
-        btnJasa.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+    if (kat === 'produk_a') {
+        btnA.className = "flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition";
+        btnB.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
     } else {
-        btnJasa.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
-        btnMakanan.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+        btnB.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
+        btnA.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
     }
     renderWorkspace();
 };
@@ -114,8 +107,8 @@ function mulaiPantauSistem() {
         if (snapshot.exists()) {
             const conf = snapshot.val();
             currentPricePerChat = conf.price_per_chat || 0;
-            textPromoMakanan = conf.text_makanan || "Belum ada teks...";
-            textPromoJasa = conf.text_jasa || "Belum ada teks...";
+            textPromoA = conf.text_produka || "Belum ada teks...";
+            textPromoB = conf.text_produkb || "Belum ada teks...";
             document.getElementById('info-tarif').innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
         }
         if (!isWorking) renderWorkspace();
@@ -148,11 +141,7 @@ function mulaiPantauSistem() {
                 
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-white/5";
-                tr.innerHTML = `
-                    <td class="py-2 px-1 text-white/90">Rp ${w.amount.toLocaleString('id-ID')}</td>
-                    <td class="py-2 px-1 text-white/50 text-[10px] italic">${w.payment_info.substring(0, 15)}...</td>
-                    <td class="py-2 px-1 text-right">${badge}</td>
-                `;
+                tr.innerHTML = `<td class="py-2 px-1 text-white/90">Rp ${w.amount.toLocaleString('id-ID')}</td><td class="py-2 px-1 text-white/50 text-[10px] italic">${w.payment_info.substring(0, 15)}...</td><td class="py-2 px-1 text-right">${badge}</td>`;
                 withdrawTbody.appendChild(tr);
             });
         }
@@ -173,9 +162,8 @@ function renderWorkspace() {
     if (allSetsData) {
         const allSets = Object.keys(allSetsData).map(key => ({ key, ...allSetsData[key] }));
 
-        // HANYA TAMPILKAN SET SESUAI TAB KATEGORI YANG AKTIF (ATAU SET LAMA YANG TIDAK ADA KATEGORI -> MASUK MAKANAN)
         const visibleSets = allSets.filter(set => {
-            let cat = set.category || 'makanan';
+            let cat = set.category || 'produk_a';
             return (set.status === "Tersedia" || set.status === "Dikerjakan") && cat === kategoriAktif;
         }).sort((a, b) => a.id - b.id);
         
@@ -200,7 +188,7 @@ function renderWorkspace() {
         
         myHistorySets.forEach(setInfo => {
             let badge = '';
-            let iconKat = (setInfo.category || 'makanan') === 'jasa' ? '💼' : '🍔';
+            let iconKat = (setInfo.category || 'produk_a') === 'produk_b' ? '🏷️' : '📦';
 
             if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
             else if (setInfo.status === "Valid") {
@@ -254,7 +242,7 @@ window.salinTeksPesan = () => {
 window.takeSet = (setKey, setName) => {
     const setTargetRef = dbRef(db, `sets/${setKey}`);
     let retrievedNumbers = []; 
-    let retrievedCategory = 'makanan';
+    let retrievedCategory = 'produk_a';
 
     runTransaction(setTargetRef, (currentData) => {
         if (currentData && currentData.status === "Tersedia") {
@@ -262,7 +250,7 @@ window.takeSet = (setKey, setName) => {
             currentData.worker = workerName;
             retrievedNumbers = currentData.numbers || []; 
             activeNumbersString = retrievedNumbers.join('\n'); 
-            retrievedCategory = currentData.category || 'makanan';
+            retrievedCategory = currentData.category || 'produk_a';
             return currentData;
         }
         return; 
@@ -282,13 +270,12 @@ function startTask(setName, numbersArray, category) {
     document.getElementById('target-amount-text').innerText = setName;
     document.getElementById('target-numbers-display').value = numbersArray.join('\n'); 
     
-    // Tampilkan ikon dan teks promosi yang sesuai
-    if(category === 'makanan') {
-        document.getElementById('active-kategori-icon').innerText = '🍔';
-        document.getElementById('promo-text-display').value = textPromoMakanan;
+    if(category === 'produk_a') {
+        document.getElementById('active-kategori-icon').innerText = '📦';
+        document.getElementById('promo-text-display').value = textPromoA;
     } else {
-        document.getElementById('active-kategori-icon').innerText = '💼';
-        document.getElementById('promo-text-display').value = textPromoJasa;
+        document.getElementById('active-kategori-icon').innerText = '🏷️';
+        document.getElementById('promo-text-display').value = textPromoB;
     }
 
     let timer = 20 * 60; 
@@ -312,12 +299,7 @@ function batalTask(alasan) {
 window.finishTask = async () => {
     clearInterval(timerInterval);
 
-    const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n` +
-                          `👤 *Operator:* ${workerName}\n` +
-                          `💳 *Pencairan:* ${paymentData}\n` +
-                          `🎯 *Sasaran:* ${activeSetName}\n` +
-                          `📊 *Nomor Target:*\n${activeNumbersString}\n\n` +
-                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
+    const formatPesan = `📡 *LAPORAN OPERASIONAL SELESAI* 📡\n\n👤 *Operator:* ${workerName}\n💳 *Pencairan:* ${paymentData}\n🎯 *Sasaran:* ${activeSetName}\n📊 *Nomor Target:*\n${activeNumbersString}\n\n_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
 
     navigator.clipboard.writeText(formatPesan).catch(() => {});
 
@@ -336,7 +318,6 @@ window.finishTask = async () => {
     } else {
         window.location.href = telegramUrl;
     }
-
     resetTampilan();
 }
 
@@ -350,4 +331,4 @@ function resetTampilan() {
     document.getElementById('timer-display').textContent = '20:00';
     document.getElementById('target-numbers-display').value = "";
     document.getElementById('promo-text-display').value = "";
-                    }
+            }
