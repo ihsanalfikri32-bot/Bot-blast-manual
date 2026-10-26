@@ -8,6 +8,8 @@ const setsRef = dbRef(db, 'sets');
 const configRef = dbRef(db, 'config');
 const withdrawRef = dbRef(db, 'withdrawals');
 
+// SEMUA KODE TELEGRAM API TELAH DIHAPUS BERSIH DI SINI
+
 let workerName = "";
 let paymentData = "";
 let isWorking = false;
@@ -27,6 +29,7 @@ let nameKat1 = "Kategori 1";
 let nameKat2 = "Kategori 2";
 
 window.onload = () => {
+    // MURNI MENGGUNAKAN LOCAL STORAGE BROWSER
     workerName = localStorage.getItem('wa_worker_name') || "";
     paymentData = localStorage.getItem('wa_payment_info') || "";
     document.getElementById('input-nama').value = workerName;
@@ -315,3 +318,4 @@ function resetTampilan() {
     document.getElementById('promo-text-display').value = "";
     document.getElementById('input-bukti').value = "";
 }
+    
