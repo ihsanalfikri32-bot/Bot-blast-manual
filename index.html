@@ -44,8 +44,9 @@
             <div id="request-area">
                 <h3 class="text-sm font-medium mb-3 text-white/80">Pilih Kategori Database</h3>
                 <div class="flex gap-2 mb-5">
-                    <button id="tab-produka" onclick="pilihKategori('produk_a')" class="flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition">📦 Produk A</button>
-                    <button id="tab-produkb" onclick="pilihKategori('produk_b')" class="flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition">🏷️ Produk B</button>
+                    <!-- Tombol ini memanggil angka '1' atau '2'. Teks di dalamnya bebas diubah -->
+                    <button id="tab-1" onclick="pilihKategori('1')" class="flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition">Kategori 1</button>
+                    <button id="tab-2" onclick="pilihKategori('2')" class="flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition">Kategori 2</button>
                 </div>
 
                 <div id="grid-sets" class="grid grid-cols-2 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar"></div>
@@ -56,8 +57,7 @@
 
             <div id="active-task-area" class="hidden animate-fade-up">
                 <div class="text-center mb-5">
-                    <p id="active-kategori-icon" class="text-2xl mb-1">📦</p>
-                    <p id="target-amount-text" class="text-lg font-semibold text-blue-300">Gugus Tugas</p>
+                    <p id="target-amount-text" class="text-lg font-semibold text-blue-300 mt-2">Gugus Tugas</p>
                 </div>
                 
                 <div class="flex flex-col items-center bg-black/20 p-4 rounded-2xl mb-5 timer-glow">
@@ -108,7 +108,7 @@
             </div>
         </div>
     </div>
-    <!-- Penambahan ?v=2 agar browser memuat pembaruan JS pekerja -->
-    <script type="module" src="worker.js?v=2"></script>
+    <!-- Script v3 memaksa browser update! -->
+    <script type="module" src="worker.js?v=3"></script>
 </body>
 </html>
