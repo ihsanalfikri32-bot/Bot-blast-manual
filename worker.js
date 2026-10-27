@@ -71,25 +71,31 @@ function masukKeWorkspace() {
     const displayNama = document.getElementById('display-nama');
     const panelLogin = document.getElementById('panel-login');
     const panelWorkspace = document.getElementById('panel-workspace');
+    const bottomNav = document.getElementById('bottom-nav');
     
     if (displayNama) displayNama.innerText = workerName;
     if (panelLogin) panelLogin.classList.add('hidden');
     if (panelWorkspace) panelWorkspace.classList.remove('hidden');
+    if (bottomNav) bottomNav.classList.remove('hidden'); // Munculkan nav bar bawah
     
     mulaiPantauSistem();
 }
 
+// STYLING TAB TERANG/GELAP DI JS
 window.pilihKategori = (kat) => {
     kategoriAktif = kat;
     const btn1 = document.getElementById('tab-1');
     const btn2 = document.getElementById('tab-2');
 
+    const activeClass = "flex-1 py-2.5 bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold transition-all";
+    const inactiveClass = "flex-1 py-2.5 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-bold transition-all hover:bg-white/50 dark:hover:bg-gray-800/50";
+
     if (kat === '1') {
-        if (btn1) btn1.className = "flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition";
-        if (btn2) btn2.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+        if (btn1) btn1.className = activeClass;
+        if (btn2) btn2.className = inactiveClass;
     } else {
-        if (btn2) btn2.className = "flex-1 py-3 glass-btn bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold border border-purple-500/30 transition";
-        if (btn1) btn1.className = "flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition";
+        if (btn2) btn2.className = activeClass;
+        if (btn1) btn1.className = inactiveClass;
     }
     renderWorkspace();
 };
@@ -112,9 +118,6 @@ function mulaiPantauSistem() {
             textPromo2 = conf.text_2 || "Belum ada teks...";
             nameKat1 = conf.name_kat1 || "Kategori 1";
             nameKat2 = conf.name_kat2 || "Kategori 2";
-            
-            const infoTarif = document.getElementById('info-tarif');
-            if (infoTarif) infoTarif.innerText = `Rp ${currentPricePerChat.toLocaleString('id-ID')}`;
             
             const tab1 = document.getElementById('tab-1');
             const tab2 = document.getElementById('tab-2');
@@ -148,12 +151,12 @@ function mulaiPantauSistem() {
 
             myWithdrawals.forEach(w => {
                 let badge = w.status === "Pending" 
-                    ? '<span class="text-yellow-400 text-[10px]">⏳ Pending</span>'
-                    : '<span class="text-emerald-400 text-[10px]">✔️ Lunas</span>';
+                    ? '<span class="text-yellow-600 dark:text-yellow-400 font-bold"><i class="fa-solid fa-clock"></i> Pend</span>'
+                    : '<span class="text-emerald-600 dark:text-emerald-400 font-bold"><i class="fa-solid fa-check-circle"></i> Lunas</span>';
                 
                 const tr = document.createElement('tr');
-                tr.className = "border-b border-white/5";
-                tr.innerHTML = `<td class="py-2 px-1 text-white/90">Rp ${w.amount.toLocaleString('id-ID')}</td><td class="py-2 px-1 text-white/50 text-[10px] italic">${w.payment_info.substring(0, 15)}...</td><td class="py-2 px-1 text-right">${badge}</td>`;
+                tr.className = "border-b border-gray-200/50 dark:border-white/5";
+                tr.innerHTML = `<td class="py-3 px-2 font-bold text-sm">Rp ${w.amount.toLocaleString('id-ID')}</td><td class="py-3 px-2 text-[10px] font-medium opacity-60">${w.payment_info.substring(0, 15)}...</td><td class="py-3 px-2 text-right text-[10px]">${badge}</td>`;
                 withdrawTbody.appendChild(tr);
             });
         }
@@ -184,20 +187,17 @@ function renderWorkspace() {
         }).sort((a, b) => a.id - b.id);
         
         visibleCount = visibleSets.length;
-        
-        const infoTersedia = document.getElementById('info-tersedia');
-        if (infoTersedia) infoTersedia.innerText = visibleCount;
 
         visibleSets.forEach(setInfo => {
             const btn = document.createElement('button');
             if (setInfo.status === "Tersedia") {
-                btn.className = "glass-btn bg-white/5 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 group text-left";
-                btn.innerHTML = `<span class="text-[10px] opacity-50 uppercase tracking-wider">Target Ops</span><span class="text-sm font-medium text-white">${setInfo.name}</span><span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/70 mt-1">${setInfo.count} Target</span>`;
+                btn.className = "glass-btn bg-white/40 dark:bg-white/5 py-4 px-4 rounded-2xl flex flex-col items-start gap-1 group text-left border border-white/40 hover:border-blue-500/50 hover:shadow-lg transition-all";
+                btn.innerHTML = `<span class="text-[9px] opacity-60 font-bold uppercase tracking-wider"><i class="fa-solid fa-crosshairs"></i> Target</span><span class="text-sm font-bold text-blue-600 dark:text-blue-300 mt-1">${setInfo.name}</span><span class="text-[10px] bg-blue-100 dark:bg-white/10 px-2 py-1 rounded-md text-blue-700 dark:text-white/70 font-medium mt-1"><i class="fa-solid fa-users"></i> ${setInfo.count} Nomor</span>`;
                 btn.onclick = () => takeSet(setInfo.key, setInfo.name);
             } else {
-                btn.className = "glass-btn bg-black/40 py-4 px-3 rounded-2xl flex flex-col items-start gap-1 text-left opacity-60 cursor-not-allowed";
+                btn.className = "glass-btn bg-gray-200/50 dark:bg-black/40 py-4 px-4 rounded-2xl flex flex-col items-start gap-1 text-left opacity-60 cursor-not-allowed border border-transparent";
                 btn.disabled = true;
-                btn.innerHTML = `<span class="text-[10px] text-rose-400 uppercase tracking-wider font-bold">🔒 Dieksekusi</span><span class="text-sm font-medium text-white/50 line-through">${setInfo.name}</span>`;
+                btn.innerHTML = `<span class="text-[9px] text-red-500 uppercase tracking-wider font-bold"><i class="fa-solid fa-lock"></i> Diproses</span><span class="text-sm font-bold opacity-50 line-through mt-1">${setInfo.name}</span>`;
             }
             gridSets.appendChild(btn);
         });
@@ -208,21 +208,21 @@ function renderWorkspace() {
             let badge = '';
             let labelKat = (setInfo.category || '1') === '2' ? `[${nameKat2}]` : `[${nameKat1}]`;
 
-            if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-400/90 text-[10px]">⏳ Otorisasi</span>';
+            if (setInfo.status === "Menunggu Validasi") badge = '<span class="text-yellow-600 dark:text-yellow-400 font-bold text-[10px]"><i class="fa-solid fa-hourglass-half"></i> Otorisasi</span>';
             else if (setInfo.status === "Valid") {
-                badge = '<span class="text-emerald-400 text-[10px]">✔️ Selesai</span>';
+                badge = '<span class="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]"><i class="fa-solid fa-check"></i> Selesai</span>';
                 let taskTime = setInfo.completed_at || 0; 
                 if (lastWithdrawTime === 0 || taskTime > lastWithdrawTime) {
                     let jumlahTerkirim = setInfo.completed_count !== undefined ? setInfo.completed_count : (setInfo.count || 0);
                     validNumberCount += jumlahTerkirim; 
                 }
             }
-            else if (setInfo.status === "Gagal") badge = '<span class="text-rose-400 text-[10px]">❌ Gagal</span>';
-            else if (setInfo.status === "Dikerjakan") badge = '<span class="text-blue-400 text-[10px]">🔄 Proses</span>';
+            else if (setInfo.status === "Gagal") badge = '<span class="text-red-600 dark:text-red-400 font-bold text-[10px]"><i class="fa-solid fa-xmark"></i> Gagal</span>';
+            else if (setInfo.status === "Dikerjakan") badge = '<span class="text-blue-600 dark:text-blue-400 font-bold text-[10px]"><i class="fa-solid fa-spinner fa-spin"></i> Proses</span>';
 
             const tr = document.createElement('tr');
-            tr.className = "border-b border-white/5";
-            tr.innerHTML = `<td class="py-2 px-1 text-white/80">${labelKat} ${setInfo.name} (${setInfo.completed_count !== undefined ? setInfo.completed_count : setInfo.count} Target)</td><td class="py-2 px-1 text-right">${badge}</td>`;
+            tr.className = "border-b border-gray-200/50 dark:border-white/5";
+            tr.innerHTML = `<td class="py-3 px-2 font-medium">${labelKat} ${setInfo.name} <br><span class="text-[9px] opacity-60">(${setInfo.completed_count !== undefined ? setInfo.completed_count : setInfo.count} Target)</span></td><td class="py-3 px-2 text-right">${badge}</td>`;
             historyTbody.appendChild(tr);
         });
     }
@@ -320,23 +320,12 @@ window.finishTask = () => prosesPenyelesaian('Selesai');
 window.reportIssue = (issueType) => prosesPenyelesaian(issueType);
 
 async function prosesPenyelesaian(tipeLaporan) {
-    const inputBukti = document.getElementById('input-bukti');
-    const linkBukti = inputBukti ? inputBukti.value.trim() : "";
-
-    // PERBAIKAN 1: Wajibkan link bukti jika selesai normal
-    if (tipeLaporan === 'Selesai' && !linkBukti) {
-        return alert("⚠️ Link bukti pengerjaan wajib diisi!");
-    }
-
     const allNumbersArray = activeNumbersString.split('\n').filter(n => n.trim() !== '');
     const totalNomor = allNumbersArray.length;
 
     let inputJumlah = prompt(`Dari total ${totalNomor} nomor, berapa nomor yang BERHASIL Anda kirim?`, totalNomor);
-    
-    // PERBAIKAN 2: Jika dibatalkan, timer tidak mati dan kembali ke halaman tugas
     if (inputJumlah === null) return; 
-
-    clearInterval(timerInterval); // Hentikan timer hanya jika prompt diisi
+    clearInterval(timerInterval); 
 
     let sentCount = parseInt(inputJumlah);
     if (isNaN(sentCount) || sentCount < 0) sentCount = 0;
@@ -358,12 +347,6 @@ async function prosesPenyelesaian(tipeLaporan) {
             video: ""
         });
     }
-    
-    // PERBAIKAN 3: Simpan ulang link bukti ke dalam database
-    let teksVideoFinal = linkBukti;
-    if (tipeLaporan !== 'Selesai') {
-        teksVideoFinal = linkBukti ? `[${tipeLaporan}] ${linkBukti}` : `Dilaporkan: ${tipeLaporan}`;
-    }
 
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
@@ -371,7 +354,7 @@ async function prosesPenyelesaian(tipeLaporan) {
             count: sentCount,
             completed_count: sentCount,
             numbers: completedNumbers,
-            video: teksVideoFinal, 
+            video: `Laporan ${tipeLaporan} (${sentCount}/${totalNomor} Terkirim)`, 
             completed_at: Date.now() 
         });
     }
@@ -380,15 +363,13 @@ async function prosesPenyelesaian(tipeLaporan) {
                           `👤 *Operator:* ${workerName}\n` +
                           `💳 *Pencairan:* ${paymentData}\n` +
                           `🎯 *Sasaran:* ${activeSetName}\n` +
-                          `📊 *Status:* Terkirim ${sentCount} dari ${totalNomor} nomor\n` +
-                          `🔗 *Link Bukti:* ${linkBukti || "Tidak Ada"}\n\n` +
-                          `📋 *Nomor Berhasil Terkirim:*\n${completedNumbers.join('\n')}`;
+                          `📊 *Status:* Terkirim ${sentCount} dari ${totalNomor} nomor\n\n` +
+                          `📋 *Nomor Berhasil Terkirim:*\n${completedNumbers.join('\n')}\n\n` +
+                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
 
     navigator.clipboard.writeText(formatPesan).catch(() => {});
-
     const telegramUrl = `https://t.me/${ADMIN_TELEGRAM_USERNAME}?text=` + encodeURIComponent(formatPesan);
     window.location.href = telegramUrl;
-
     resetTampilan();
 }
 
@@ -409,12 +390,10 @@ function resetTampilan() {
     const timerDisplay = document.getElementById('timer-display');
     const targetDisplay = document.getElementById('target-numbers-display');
     const promoDisplay = document.getElementById('promo-text-display');
-    const inputBukti = document.getElementById('input-bukti');
 
     if (reqArea) reqArea.classList.remove('hidden');
     if (actArea) actArea.classList.add('hidden');
     if (timerDisplay) timerDisplay.textContent = '20:00';
     if (targetDisplay) targetDisplay.value = "";
     if (promoDisplay) promoDisplay.value = "";
-    if (inputBukti) inputBukti.value = "";
-            }
+    }
