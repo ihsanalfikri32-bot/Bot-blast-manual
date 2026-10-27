@@ -213,7 +213,6 @@ function renderWorkspace() {
                 badge = '<span class="text-emerald-400 text-[10px]">✔️ Selesai</span>';
                 let taskTime = setInfo.completed_at || 0; 
                 if (lastWithdrawTime === 0 || taskTime > lastWithdrawTime) {
-                    // MENGGUNAKAN HASIL HITUNGAN NYATA HANYA DARI NOMOR TERKIRIM
                     let jumlahTerkirim = setInfo.completed_count !== undefined ? setInfo.completed_count : (setInfo.count || 0);
                     validNumberCount += jumlahTerkirim; 
                 }
@@ -318,20 +317,26 @@ function startTask(setName, numbersArray, category) {
 }
 
 window.finishTask = () => prosesPenyelesaian('Selesai');
-window.reportIssue = (issueType) => {
-    clearInterval(timerInterval);
-    prosesPenyelesaian(issueType);
-};
+window.reportIssue = (issueType) => prosesPenyelesaian(issueType);
 
 async function prosesPenyelesaian(tipeLaporan) {
-    clearInterval(timerInterval);
+    const inputBukti = document.getElementById('input-bukti');
+    const linkBukti = inputBukti ? inputBukti.value.trim() : "";
+
+    // PERBAIKAN 1: Wajibkan link bukti jika selesai normal
+    if (tipeLaporan === 'Selesai' && !linkBukti) {
+        return alert("⚠️ Link bukti pengerjaan wajib diisi!");
+    }
 
     const allNumbersArray = activeNumbersString.split('\n').filter(n => n.trim() !== '');
     const totalNomor = allNumbersArray.length;
 
     let inputJumlah = prompt(`Dari total ${totalNomor} nomor, berapa nomor yang BERHASIL Anda kirim?`, totalNomor);
-
+    
+    // PERBAIKAN 2: Jika dibatalkan, timer tidak mati dan kembali ke halaman tugas
     if (inputJumlah === null) return; 
+
+    clearInterval(timerInterval); // Hentikan timer hanya jika prompt diisi
 
     let sentCount = parseInt(inputJumlah);
     if (isNaN(sentCount) || sentCount < 0) sentCount = 0;
@@ -340,7 +345,6 @@ async function prosesPenyelesaian(tipeLaporan) {
     const completedNumbers = allNumbersArray.slice(0, sentCount);
     const remainingNumbers = allNumbersArray.slice(sentCount);
 
-    // BILA ADA SISA NOMOR, BUAT GUGUS BARU BERSTATUS 'TERSEDIA'
     if (remainingNumbers.length > 0) {
         const newSetId = Date.now();
         await set(dbRef(db, `sets/Gugus_Sisa_${newSetId}`), {
@@ -354,15 +358,20 @@ async function prosesPenyelesaian(tipeLaporan) {
             video: ""
         });
     }
+    
+    // PERBAIKAN 3: Simpan ulang link bukti ke dalam database
+    let teksVideoFinal = linkBukti;
+    if (tipeLaporan !== 'Selesai') {
+        teksVideoFinal = linkBukti ? `[${tipeLaporan}] ${linkBukti}` : `Dilaporkan: ${tipeLaporan}`;
+    }
 
-    // UPDATE GUGUS SAAT INI HANYA SEBANYAK NOMOR YANG TERKIRIM
     if (activeSetKey) {
         await update(dbRef(db, `sets/${activeSetKey}`), { 
             status: "Menunggu Validasi", 
             count: sentCount,
             completed_count: sentCount,
             numbers: completedNumbers,
-            video: `Laporan ${tipeLaporan} (${sentCount}/${totalNomor} Terkirim)`,
+            video: teksVideoFinal, 
             completed_at: Date.now() 
         });
     }
@@ -371,9 +380,9 @@ async function prosesPenyelesaian(tipeLaporan) {
                           `👤 *Operator:* ${workerName}\n` +
                           `💳 *Pencairan:* ${paymentData}\n` +
                           `🎯 *Sasaran:* ${activeSetName}\n` +
-                          `📊 *Status:* Terkirim ${sentCount} dari ${totalNomor} nomor\n\n` +
-                          `📋 *Nomor Berhasil Terkirim:*\n${completedNumbers.join('\n')}\n\n` +
-                          `_(Silakan lampirkan video bukti pengerjaan di bawah pesan ini)_`;
+                          `📊 *Status:* Terkirim ${sentCount} dari ${totalNomor} nomor\n` +
+                          `🔗 *Link Bukti:* ${linkBukti || "Tidak Ada"}\n\n` +
+                          `📋 *Nomor Berhasil Terkirim:*\n${completedNumbers.join('\n')}`;
 
     navigator.clipboard.writeText(formatPesan).catch(() => {});
 
@@ -400,11 +409,12 @@ function resetTampilan() {
     const timerDisplay = document.getElementById('timer-display');
     const targetDisplay = document.getElementById('target-numbers-display');
     const promoDisplay = document.getElementById('promo-text-display');
+    const inputBukti = document.getElementById('input-bukti');
 
     if (reqArea) reqArea.classList.remove('hidden');
     if (actArea) actArea.classList.add('hidden');
     if (timerDisplay) timerDisplay.textContent = '20:00';
     if (targetDisplay) targetDisplay.value = "";
     if (promoDisplay) promoDisplay.value = "";
-    }
-    
+    if (inputBukti) inputBukti.value = "";
+            }
