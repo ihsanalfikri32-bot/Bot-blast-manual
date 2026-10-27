@@ -1,112 +1,219 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ruang Kerja Ops</title>
+    <!-- Konfigurasi Tailwind dengan Tema Gelap/Terang & Animasi Blob -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: { blob: "blob 7s infinite" },
+                    keyframes: {
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="p-4 flex flex-col items-center justify-center min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-500 min-h-screen relative pb-20">
 
-    <div id="panel-login" class="w-full max-w-md glass-panel p-8 text-center animate-fade-up">
-        <h2 class="text-2xl font-light mb-2">Otorisasi <span class="font-semibold text-blue-400">Operator</span></h2>
-        <p class="text-sm opacity-60 mb-8 font-light">Sistem berbasis web mandiri.</p>
-        
-        <div class="mb-5">
-            <input type="text" id="input-nama" class="glass-input block w-full p-4 rounded-xl text-center text-sm" placeholder="Masukkan ID/Nama Anda...">
-        </div>
-
-        <input type="text" id="input-payment" class="glass-input block w-full p-4 rounded-xl mb-8 text-center text-sm tracking-wide" placeholder="Metode Pencairan (Cth: DANA 0812...)">
-        <button onclick="simpanDataPekerja()" class="glass-btn btn-primary text-white font-medium py-3.5 px-6 rounded-xl w-full">Akses Ruang Kerja</button>
+    <!-- Efek Blob Latar Belakang -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-0 left-1/4 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute top-0 right-1/4 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-8 left-1/3 w-72 h-72 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
     </div>
 
-    <div id="panel-workspace" class="w-full max-w-md hidden w-full animate-fade-up">
-        
-        <div class="glass-panel p-4 mb-4 flex justify-between items-center bg-white/5">
-            <div>
-                <p class="text-[10px] uppercase tracking-widest opacity-50 font-bold">Operator</p>
-                <p id="display-nama" class="font-medium text-sm text-blue-200">Nama</p>
-            </div>
-            <button onclick="editPembayaran()" class="text-[10px] uppercase tracking-wider glass-btn px-3 py-1.5 rounded-lg opacity-70">Ubah Data</button>
+    <!-- Header & Toggle Tema -->
+    <header class="p-4 flex justify-between items-center z-10 relative">
+        <h1 class="font-bold text-lg tracking-wide"><i class="fa-solid fa-bolt text-blue-500 mr-2"></i>OPS<span class="font-light">Work</span></h1>
+        <button onclick="toggleTheme()" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-600 dark:text-yellow-300 hover:scale-110">
+            <i id="theme-icon" class="fa-solid fa-moon"></i>
+        </button>
+    </header>
+
+    <div class="p-4 flex flex-col items-center justify-center min-h-[80vh] w-full max-w-md mx-auto">
+
+        <!-- PANEL LOGIN -->
+        <div id="panel-login" class="w-full glass-panel p-8 rounded-3xl text-center animate-fade-up">
+            <div class="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-user-shield"></i></div>
+            <h2 class="text-2xl font-bold mb-2">Otorisasi Operator</h2>
+            <p class="text-xs opacity-60 mb-8 font-light">Masuk ke ruang kerja terenkripsi.</p>
+            
+            <input type="text" id="input-nama" class="glass-input block w-full p-4 rounded-xl text-center text-sm mb-4 font-medium" placeholder="ID / Nama Anda">
+            <input type="text" id="input-payment" class="glass-input block w-full p-4 rounded-xl mb-8 text-center text-sm tracking-wide font-medium" placeholder="Metode Penarikan (DANA 08...)">
+            <button onclick="simpanDataPekerja()" class="glass-btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl w-full shadow-lg shadow-blue-500/30">Mulai Bekerja <i class="fa-solid fa-arrow-right ml-2"></i></button>
         </div>
 
-        <div class="glass-panel p-4 mb-3 flex justify-between items-center border border-emerald-500/20 bg-emerald-500/10">
-            <div>
-                <p class="text-[9px] uppercase tracking-widest opacity-70 mb-1 text-emerald-200">Estimasi Pendapatan Baru</p>
-                <p id="display-saldo" class="text-xl font-bold text-emerald-400">Rp 0</p>
-            </div>
-            <button onclick="ajukanPencairan()" class="glass-btn btn-success text-[10px] uppercase tracking-widest font-bold px-4 py-2.5 rounded-xl shadow-lg">Cairkan</button>
-        </div>
-
-        <div class="glass-panel p-5 mb-5 relative overflow-hidden">
-            <div id="request-area">
-                <h3 class="text-sm font-medium mb-3 text-white/80">Pilih Kategori Database</h3>
-                <div class="flex gap-2 mb-5">
-                    <button id="tab-1" onclick="pilihKategori('1')" class="flex-1 py-3 glass-btn bg-blue-500/20 text-blue-300 rounded-xl text-xs font-bold border border-blue-500/30 transition">Memuat...</button>
-                    <button id="tab-2" onclick="pilihKategori('2')" class="flex-1 py-3 glass-btn bg-white/5 text-white/50 rounded-xl text-xs font-bold border border-transparent transition">Memuat...</button>
-                </div>
-
-                <div id="grid-sets" class="grid grid-cols-2 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar"></div>
-                <div id="empty-state" class="hidden text-center py-10">
-                    <p class="opacity-50 text-xs font-light">Kategori ini kosong / habis.</p>
-                </div>
-            </div>
-
-            <div id="active-task-area" class="hidden animate-fade-up">
-                <div class="text-center mb-5">
-                    <p id="target-amount-text" class="text-lg font-semibold text-blue-300 mt-2">Gugus Tugas</p>
-                </div>
-                
-                <div class="flex flex-col items-center bg-black/20 p-4 rounded-2xl mb-5 timer-glow">
-                    <span class="text-xs opacity-60 mb-1 font-medium">Sisa Waktu</span>
-                    <span id="timer-display" class="font-mono text-4xl font-light text-white">20:00</span>
-                </div>
-
-                <div class="mb-3 bg-black/20 p-1 rounded-xl border border-blue-500/20">
-                    <div class="flex justify-between items-center p-2 px-3">
-                        <label class="text-[10px] uppercase font-bold text-blue-200">Teks Pesan Promosi</label>
-                        <button onclick="salinTeksPesan()" class="text-[10px] bg-blue-500/20 text-blue-200 px-3 py-1.5 rounded-md">Salin Teks</button>
-                    </div>
-                    <textarea id="promo-text-display" rows="3" class="glass-input block w-full p-3 text-[10px] bg-transparent outline-none border-none text-white/80" readonly></textarea>
-                </div>
-
-                <div class="mb-5 bg-black/20 p-1 rounded-xl">
-                    <div class="flex justify-between items-center p-2 px-3">
-                        <label class="text-[10px] uppercase font-bold opacity-70">Data Nomor Target</label>
-                        <button onclick="salinNomor()" class="text-[10px] bg-white/10 px-3 py-1.5 rounded-md">Salin Nomor</button>
-                    </div>
-                    <textarea id="target-numbers-display" rows="3" class="glass-input block w-full p-3 text-xs font-mono bg-transparent outline-none border-none" readonly></textarea>
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <button onclick="finishTask()" class="glass-btn btn-success text-white font-medium py-3.5 px-4 rounded-xl shadow-lg">Otorisasi & Selesaikan</button>
-                    <div class="grid grid-cols-2 gap-2 mt-1">
-                        <button onclick="reportIssue('Ban')" class="glass-btn btn-danger text-xs py-2.5 px-4 rounded-xl">Lapor Ban</button>
-                        <button onclick="reportIssue('Limit')" class="glass-btn btn-warning text-xs py-2.5 px-4 rounded-xl">Lapor Limit</button>
+        <!-- WORKSPACE UTAMA -->
+        <div id="panel-workspace" class="w-full hidden animate-fade-up">
+            
+            <div class="glass-panel p-4 mb-5 flex justify-between items-center rounded-2xl">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold"><i class="fa-solid fa-user"></i></div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest opacity-50 font-bold">Operator Aktif</p>
+                        <p id="display-nama" class="font-bold text-sm">Memuat...</p>
                     </div>
                 </div>
+                <button onclick="editPembayaran()" class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500/20 transition"><i class="fa-solid fa-power-off"></i></button>
             </div>
-        </div>
-        
-        <div class="glass-panel p-5 mb-5">
-            <h3 class="text-xs uppercase opacity-50 mb-4">Log Pekerjaan</h3>
-            <div class="overflow-y-auto max-h-40 custom-scrollbar pr-2">
-                <table class="w-full text-left text-xs"><tbody id="worker-history-list"></tbody></table>
-            </div>
-        </div>
 
-        <div class="glass-panel p-5 mb-5 border border-emerald-500/10">
-            <h3 class="text-xs uppercase opacity-50 mb-4 text-emerald-200">Riwayat Pencairan Anda</h3>
-            <div class="overflow-y-auto max-h-40 custom-scrollbar pr-2">
-                <table class="w-full text-left text-xs"><tbody id="withdraw-history-list"></tbody></table>
-                <div id="withdraw-empty" class="text-center py-4 hidden">
-                    <p class="opacity-40 text-xs font-light">Belum ada riwayat penarikan dana.</p>
+            <!-- MENU 1: BERANDA (TUGAS) -->
+            <div id="menu-beranda" class="menu-section">
+                <!-- Panel Saldo -->
+                <div class="glass-panel p-5 mb-5 flex justify-between items-center rounded-2xl border-l-4 border-l-emerald-500">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest opacity-60 font-bold mb-1">Estimasi Pendapatan</p>
+                        <p id="display-saldo" class="text-2xl font-black text-emerald-500 dark:text-emerald-400">Rp 0</p>
+                    </div>
+                    <button onclick="ajukanPencairan()" class="glass-btn bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] uppercase tracking-widest font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/30">Tarik <i class="fa-solid fa-wallet ml-1"></i></button>
+                </div>
+
+                <!-- Area Pemilihan Tugas -->
+                <div id="request-area" class="glass-panel p-5 mb-5 rounded-3xl">
+                    <h3 class="text-sm font-bold mb-4 opacity-80 flex items-center gap-2"><i class="fa-solid fa-database text-blue-500"></i> Sumber Data</h3>
+                    <div class="flex gap-2 mb-5 bg-gray-200/50 dark:bg-black/30 p-1 rounded-xl">
+                        <button id="tab-1" onclick="pilihKategori('1')" class="flex-1 py-2.5 bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold transition-all">Memuat...</button>
+                        <button id="tab-2" onclick="pilihKategori('2')" class="flex-1 py-2.5 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-bold transition-all hover:bg-white/50 dark:hover:bg-gray-800/50">Memuat...</button>
+                    </div>
+
+                    <div id="grid-sets" class="grid grid-cols-2 gap-3 max-h-[45vh] overflow-y-auto pr-2 custom-scrollbar pb-2"></div>
+                    <div id="empty-state" class="hidden text-center py-12 flex flex-col items-center justify-center opacity-50">
+                        <i class="fa-regular fa-folder-open text-4xl mb-3"></i>
+                        <p class="text-xs font-medium">Kategori ini kosong / habis.</p>
+                    </div>
+                </div>
+
+                <!-- Area Sedang Mengerjakan Tugas -->
+                <div id="active-task-area" class="hidden glass-panel p-5 rounded-3xl border border-blue-500/30 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                    
+                    <div class="text-center mb-6 mt-2">
+                        <span class="bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">Operasi Berjalan</span>
+                        <p id="target-amount-text" class="text-xl font-bold">Gugus Tugas</p>
+                    </div>
+                    
+                    <div class="flex flex-col items-center bg-gray-200/50 dark:bg-black/40 p-5 rounded-2xl mb-6 shadow-inner">
+                        <span class="text-xs opacity-60 mb-1 font-bold uppercase tracking-wider">Sisa Waktu</span>
+                        <span id="timer-display" class="font-mono text-5xl font-light text-blue-600 dark:text-blue-400">20:00</span>
+                    </div>
+
+                    <div class="mb-4 bg-gray-100 dark:bg-black/30 p-1.5 rounded-xl">
+                        <div class="flex justify-between items-center p-2 px-3">
+                            <label class="text-[10px] uppercase font-bold opacity-70"><i class="fa-regular fa-message mr-1"></i> Teks Promosi</label>
+                            <button onclick="salinTeksPesan()" class="text-[10px] bg-white dark:bg-gray-800 shadow px-3 py-1.5 rounded-lg font-bold hover:scale-105 transition text-blue-500">Salin</button>
+                        </div>
+                        <textarea id="promo-text-display" rows="3" class="glass-input block w-full p-3 text-xs bg-transparent outline-none border-none opacity-80 font-medium" readonly></textarea>
+                    </div>
+
+                    <div class="mb-6 bg-gray-100 dark:bg-black/30 p-1.5 rounded-xl">
+                        <div class="flex justify-between items-center p-2 px-3">
+                            <label class="text-[10px] uppercase font-bold opacity-70"><i class="fa-solid fa-list-ol mr-1"></i> Nomor Target</label>
+                            <button onclick="salinNomor()" class="text-[10px] bg-white dark:bg-gray-800 shadow px-3 py-1.5 rounded-lg font-bold hover:scale-105 transition text-purple-500">Salin</button>
+                        </div>
+                        <textarea id="target-numbers-display" rows="3" class="glass-input block w-full p-3 text-xs font-mono bg-transparent outline-none border-none opacity-80" readonly></textarea>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <button onclick="finishTask()" class="glass-btn bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Lapor & Selesaikan
+                        </button>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="reportIssue('Ban')" class="glass-btn bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold text-xs py-3 rounded-xl hover:bg-red-200 dark:hover:bg-red-500/20 transition">Lapor Banned</button>
+                            <button onclick="reportIssue('Limit')" class="glass-btn bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 font-bold text-xs py-3 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-500/20 transition">Lapor Limit</button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- MENU 2: RIWAYAT & LOG -->
+            <div id="menu-riwayat" class="menu-section hidden">
+                <div class="glass-panel p-6 mb-5 rounded-3xl">
+                    <h3 class="text-sm font-bold opacity-80 mb-5 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-purple-500"></i> Log Pekerjaan (Tugas)</h3>
+                    <div class="overflow-y-auto max-h-60 custom-scrollbar pr-2">
+                        <table class="w-full text-left text-xs"><tbody id="worker-history-list"></tbody></table>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 mb-5 rounded-3xl border border-emerald-500/20">
+                    <h3 class="text-sm font-bold opacity-80 mb-5 flex items-center gap-2 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-money-bill-wave"></i> Riwayat Pencairan</h3>
+                    <div class="overflow-y-auto max-h-60 custom-scrollbar pr-2">
+                        <table class="w-full text-left text-xs"><tbody id="withdraw-history-list"></tbody></table>
+                        <div id="withdraw-empty" class="text-center py-6 hidden flex flex-col items-center opacity-40">
+                            <i class="fa-solid fa-receipt text-3xl mb-2"></i>
+                            <p class="text-[10px] font-medium uppercase tracking-wider">Belum Ada Transaksi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-    
-    <script type="module" src="worker.js?v=12"></script>
+
+    <!-- BOTTOM NAVIGATION BAR (FIXED) -->
+    <div id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 hidden z-40 pb-safe">
+        <div class="max-w-md mx-auto flex justify-around p-3">
+            <button onclick="gantiMenu('beranda')" id="nav-btn-beranda" class="nav-btn active flex flex-col items-center gap-1 text-blue-500 w-20 transition-all">
+                <i class="fa-solid fa-house text-xl mb-1"></i>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Tugas</span>
+            </button>
+            <button onclick="gantiMenu('riwayat')" id="nav-btn-riwayat" class="nav-btn flex flex-col items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-purple-500 w-20 transition-all">
+                <i class="fa-solid fa-clock-rotate-left text-xl mb-1"></i>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Riwayat</span>
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="worker.js?v=13"></script>
+    <script>
+        // Logika Ganti Tema & Ganti Tab Navigasi HTML Sederhana
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.classList.replace('fa-moon', 'fa-sun');
+                icon.classList.replace('text-yellow-300', 'text-amber-500');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.classList.replace('fa-sun', 'fa-moon');
+                icon.classList.replace('text-amber-500', 'text-yellow-300');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Cek Tema Saat Muat
+        if (localStorage.getItem('theme') === 'light') toggleTheme();
+
+        function gantiMenu(menuId) {
+            document.getElementById('menu-beranda').classList.add('hidden');
+            document.getElementById('menu-riwayat').classList.add('hidden');
+            
+            document.getElementById('nav-btn-beranda').className = "nav-btn flex flex-col items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-blue-500 w-20 transition-all";
+            document.getElementById('nav-btn-riwayat').className = "nav-btn flex flex-col items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-purple-500 w-20 transition-all";
+            
+            document.getElementById('menu-' + menuId).classList.remove('hidden');
+            
+            if(menuId === 'beranda') {
+                document.getElementById('nav-btn-beranda').className = "nav-btn active flex flex-col items-center gap-1 text-blue-500 w-20 transition-all scale-110";
+            } else {
+                document.getElementById('nav-btn-riwayat').className = "nav-btn active flex flex-col items-center gap-1 text-purple-500 w-20 transition-all scale-110";
+            }
+        }
+    </script>
 </body>
 </html>
